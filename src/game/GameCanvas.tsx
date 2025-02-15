@@ -108,6 +108,17 @@ const GameCanvas = () => {
         );
       }
 
+      // Draw obstacles
+      selectedMap.obstacles.forEach((obstacle) => {
+        ctx.fillStyle = obstacle.color;
+        ctx.fillRect(
+          obstacle.x - camera.x,
+          obstacle.y - camera.y,
+          obstacle.width,
+          obstacle.height
+        );
+      });
+
       //Draw the player last (so it’s always on top)
       if (characterImage.complete && characterImage.naturalWidth > 0) {
         ctx.drawImage(
