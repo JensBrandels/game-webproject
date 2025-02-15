@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import { maps } from "./Maps";
 import { characters } from "./Characters";
+import { checkCollision } from "./Collision";
+
+//types
+import { PlacedObstacle } from "./Maps";
 
 const GameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,6 +20,19 @@ const GameCanvas = () => {
   const selectedMap = maps.find((m) => m.id === 2) || maps[0];
   const backgroundImage = new Image();
   backgroundImage.src = selectedMap.background; //get background from selectedmap
+
+  //Load obstacle images
+  const obstacleImages = selectedMap.obstacles
+    .map((obstacle) => {
+      if (!obstacle) return null; // Skip if undefined
+      const img = new Image();
+      if (obstacle.sprite) img.src = obstacle.sprite;
+
+      return { ...obstacle, image: img }; // Ensure x, y, and image exist
+    })
+    .filter(
+      (o): o is PlacedObstacle & { image: HTMLImageElement } => o !== null
+    );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -53,9 +70,19 @@ const GameCanvas = () => {
       newX = Math.max(0, Math.min(selectedMap.size.width - playerSize, newX));
       newY = Math.max(0, Math.min(selectedMap.size.height - playerSize, newY));
 
-      //Update player position
-      player.x = newX;
-      player.y = newY;
+      //check for collisions between character and obstacles
+      if (newX !== player.x || newY !== player.y) {
+        if (
+          !checkCollision(newX, newY, selectedCharacter, selectedMap.obstacles)
+        ) {
+          player.x = newX;
+          player.y = newY;
+        }
+      }
+
+      // //Update player position
+      // player.x = newX;
+      // player.y = newY;
 
       const screenCenterX = canvas.width / 2;
       const screenCenterY = canvas.height / 2;
@@ -79,10 +106,9 @@ const GameCanvas = () => {
     const draw = () => {
       if (!ctx) return;
 
-      //Clear the canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the background manually as tiles
+      // Draw background
       if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
         for (
           let x = 0;
@@ -98,7 +124,6 @@ const GameCanvas = () => {
           }
         }
       } else {
-        // Fallback background
         ctx.fillStyle = "green";
         ctx.fillRect(
           0 - camera.x,
@@ -108,18 +133,40 @@ const GameCanvas = () => {
         );
       }
 
-      // Draw obstacles
-      selectedMap.obstacles.forEach((obstacle) => {
-        ctx.fillStyle = obstacle.color;
-        ctx.fillRect(
-          obstacle.x - camera.x,
-          obstacle.y - camera.y,
-          obstacle.width,
-          obstacle.height
+      //draw the damn obstacles
+      obstacleImages.forEach((obstacle) => {
+        if (obstacle.image && obstacle.image.complete) {
+          ctx.drawImage(
+            obstacle.image,
+            obstacle.x - camera.x,
+            obstacle.y - camera.y,
+            obstacle.width,
+            obstacle.height
+          );
+        } else {
+          ctx.fillStyle = obstacle.color || "red";
+          ctx.fillRect(
+            obstacle.x - camera.x,
+            obstacle.y - camera.y,
+            obstacle.width,
+            obstacle.height
+          );
+        }
+
+        //! Draw hitbox (debug mode)
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        const hitboxX = obstacle.x + (obstacle.hitbox.offsetX || 0);
+        const hitboxY = obstacle.y + (obstacle.hitbox.offsetY || 0);
+        ctx.strokeRect(
+          hitboxX - camera.x,
+          hitboxY - camera.y,
+          obstacle.hitbox.width,
+          obstacle.hitbox.height
         );
       });
 
-      //Draw the player last (so it’s always on top)
+      // Draw player
       if (characterImage.complete && characterImage.naturalWidth > 0) {
         ctx.drawImage(
           characterImage,
@@ -129,7 +176,7 @@ const GameCanvas = () => {
           100
         );
       } else {
-        ctx.fillStyle = "red"; // Fallback
+        ctx.fillStyle = "red";
         ctx.fillRect(player.x - camera.x, player.y - camera.y, 30, 30);
       }
     };
