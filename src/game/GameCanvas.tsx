@@ -98,7 +98,7 @@ const GameCanvas = () => {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // ✅ BACKGROUND RENDERING IS BACK
+      // drawing the background
       if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
         for (
           let x = 0;
@@ -123,7 +123,7 @@ const GameCanvas = () => {
         );
       }
 
-      // ✅ Draw obstacles with collision (trunks, rocks, etc.) BEFORE the player
+      //Draw obstacles with collision (trunks, rocks, etc.) BEFORE the player
       obstacleImages.forEach((obstacle) => {
         if (obstacle.image.complete) {
           ctx.drawImage(
@@ -136,7 +136,7 @@ const GameCanvas = () => {
         }
       });
 
-      // ✅ Draw Player
+      //Draw Player
       if (characterImage.complete && characterImage.naturalWidth > 0) {
         ctx.drawImage(
           characterImage,
@@ -147,7 +147,7 @@ const GameCanvas = () => {
         );
       }
 
-      // ✅ Draw purely visual obstacles (tree crowns, decor, etc.) AFTER the player
+      //Draw purely visual obstacles (tree crowns, decor, etc.) AFTER the player
       visualObstacleImages.forEach((obstacle) => {
         if (obstacle.image.complete) {
           ctx.drawImage(
@@ -160,7 +160,7 @@ const GameCanvas = () => {
         }
       });
 
-      // 🔍 Draw hitbox (debug mode)
+      //Draw hitbox (debug mode)
       selectedMap.obstaclesWithCollision.forEach((obstacle) => {
         ctx.strokeStyle = "red";
         ctx.lineWidth = 2;
@@ -181,7 +181,7 @@ const GameCanvas = () => {
       requestAnimationFrame(gameLoop);
     };
 
-    gameLoop(); // ✅ Game starts immediately
+    gameLoop(); //Game starts immediately
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
