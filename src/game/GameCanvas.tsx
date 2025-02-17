@@ -160,19 +160,19 @@ const GameCanvas = () => {
         }
       });
 
-      //Draw hitbox (debug mode)
-      selectedMap.obstaclesWithCollision.forEach((obstacle) => {
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
-        const hitboxX = obstacle.x + (obstacle.hitbox.offsetX || 0);
-        const hitboxY = obstacle.y + (obstacle.hitbox.offsetY || 0);
-        ctx.strokeRect(
-          hitboxX - camera.x,
-          hitboxY - camera.y,
-          obstacle.hitbox.width,
-          obstacle.hitbox.height
-        );
-      });
+      // //Draw hitbox (debug mode)
+      // selectedMap.obstaclesWithCollision.forEach((obstacle) => {
+      //   ctx.strokeStyle = "red";
+      //   ctx.lineWidth = 2;
+      //   const hitboxX = obstacle.x + (obstacle.hitbox.offsetX || 0);
+      //   const hitboxY = obstacle.y + (obstacle.hitbox.offsetY || 0);
+      //   ctx.strokeRect(
+      //     hitboxX - camera.x,
+      //     hitboxY - camera.y,
+      //     obstacle.hitbox.width,
+      //     obstacle.hitbox.height
+      //   );
+      // });
     };
 
     const gameLoop = () => {
