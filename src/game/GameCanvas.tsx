@@ -3,51 +3,45 @@ import { maps } from "./Maps";
 import { characters } from "./Characters";
 import { checkCollision } from "./Collision";
 
-//types
-import { PlacedObstacle } from "./Maps";
-
 const GameCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const player = { x: 400, y: 300, speed: 3 }; //Player starts in center
-  const camera = { x: 0, y: 0 }; //Camera position
+  const player = { x: 400, y: 300, speed: 3 }; // Player starts in center
+  const camera = { x: 0, y: 0 }; // Camera position
 
-  //select character (later this we'll get from user input)
+  //Select character (later from user input)
   const selectedCharacter = characters.find((c) => c.id === 1) || characters[0];
   const characterImage = new Image();
   characterImage.src = selectedCharacter.sprite;
 
-  //select the active map from maps.ts(now it's hardcoded)
+  //Select active map
   const selectedMap = maps.find((m) => m.id === 2) || maps[0];
   const backgroundImage = new Image();
-  backgroundImage.src = selectedMap.background; //get background from selectedmap
+  backgroundImage.src = selectedMap.background; // ✅ BACKGROUND RENDERING IS BACK
 
-  //Load obstacle images
-  const obstacleImages = selectedMap.obstacles
-    .map((obstacle) => {
-      if (!obstacle) return null; // Skip if undefined
+  //Load obstacle images from selectedMap
+  const obstacleImages = selectedMap.obstaclesWithCollision.map((obstacle) => {
+    const img = new Image();
+    img.src = obstacle.sprite || "";
+    return { ...obstacle, image: img };
+  });
+
+  //Load visual-only obstacles (tree crowns, decorations)
+  const visualObstacleImages = selectedMap.obstaclesForVisual.map(
+    (obstacle) => {
       const img = new Image();
-      if (obstacle.sprite) img.src = obstacle.sprite;
-
-      return { ...obstacle, image: img }; // Ensure x, y, and image exist
-    })
-    .filter(
-      (o): o is PlacedObstacle & { image: HTMLImageElement } => o !== null
-    );
+      img.src = obstacle.sprite || "";
+      return { ...obstacle, image: img };
+    }
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) {
-      console.log("Canvas is null!");
-      return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("Could not get 2D context!");
-      return;
-    }
+    if (!ctx) return;
 
-    let keys: Record<string, boolean> = {}; //Track pressed keys
+    let keys: Record<string, boolean> = {};
 
     const handleKeyDown = (e: KeyboardEvent) => (keys[e.key] = true);
     const handleKeyUp = (e: KeyboardEvent) => (keys[e.key] = false);
@@ -55,7 +49,6 @@ const GameCanvas = () => {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    //update character with camera
     const update = () => {
       const playerSize = 100;
       let newX = player.x;
@@ -66,23 +59,20 @@ const GameCanvas = () => {
       if (keys["ArrowLeft"] || keys["a"]) newX -= player.speed;
       if (keys["ArrowRight"] || keys["d"]) newX += player.speed;
 
-      //Prevent player from moving out of map bounds
       newX = Math.max(0, Math.min(selectedMap.size.width - playerSize, newX));
       newY = Math.max(0, Math.min(selectedMap.size.height - playerSize, newY));
 
-      //check for collisions between character and obstacles
-      if (newX !== player.x || newY !== player.y) {
-        if (
-          !checkCollision(newX, newY, selectedCharacter, selectedMap.obstacles)
-        ) {
-          player.x = newX;
-          player.y = newY;
-        }
+      if (
+        !checkCollision(
+          newX,
+          newY,
+          selectedCharacter,
+          selectedMap.obstaclesWithCollision
+        )
+      ) {
+        player.x = newX;
+        player.y = newY;
       }
-
-      // //Update player position
-      // player.x = newX;
-      // player.y = newY;
 
       const screenCenterX = canvas.width / 2;
       const screenCenterY = canvas.height / 2;
@@ -108,7 +98,7 @@ const GameCanvas = () => {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw background
+      // ✅ BACKGROUND RENDERING IS BACK
       if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
         for (
           let x = 0;
@@ -133,9 +123,9 @@ const GameCanvas = () => {
         );
       }
 
-      //draw the damn obstacles
+      // ✅ Draw obstacles with collision (trunks, rocks, etc.) BEFORE the player
       obstacleImages.forEach((obstacle) => {
-        if (obstacle.image && obstacle.image.complete) {
+        if (obstacle.image.complete) {
           ctx.drawImage(
             obstacle.image,
             obstacle.x - camera.x,
@@ -143,17 +133,35 @@ const GameCanvas = () => {
             obstacle.width,
             obstacle.height
           );
-        } else {
-          ctx.fillStyle = obstacle.color || "red";
-          ctx.fillRect(
+        }
+      });
+
+      // ✅ Draw Player
+      if (characterImage.complete && characterImage.naturalWidth > 0) {
+        ctx.drawImage(
+          characterImage,
+          player.x - camera.x,
+          player.y - camera.y,
+          100,
+          100
+        );
+      }
+
+      // ✅ Draw purely visual obstacles (tree crowns, decor, etc.) AFTER the player
+      visualObstacleImages.forEach((obstacle) => {
+        if (obstacle.image.complete) {
+          ctx.drawImage(
+            obstacle.image,
             obstacle.x - camera.x,
             obstacle.y - camera.y,
             obstacle.width,
             obstacle.height
           );
         }
+      });
 
-        //! Draw hitbox (debug mode)
+      // 🔍 Draw hitbox (debug mode)
+      selectedMap.obstaclesWithCollision.forEach((obstacle) => {
         ctx.strokeStyle = "red";
         ctx.lineWidth = 2;
         const hitboxX = obstacle.x + (obstacle.hitbox.offsetX || 0);
@@ -165,20 +173,6 @@ const GameCanvas = () => {
           obstacle.hitbox.height
         );
       });
-
-      // Draw player
-      if (characterImage.complete && characterImage.naturalWidth > 0) {
-        ctx.drawImage(
-          characterImage,
-          player.x - camera.x,
-          player.y - camera.y,
-          100,
-          100
-        );
-      } else {
-        ctx.fillStyle = "red";
-        ctx.fillRect(player.x - camera.x, player.y - camera.y, 30, 30);
-      }
     };
 
     const gameLoop = () => {
@@ -187,19 +181,7 @@ const GameCanvas = () => {
       requestAnimationFrame(gameLoop);
     };
 
-    //Only start the game loop after the grass texture loads
-    backgroundImage.onload = () => {
-      console.log("Grass texture loaded!");
-      gameLoop();
-    };
-
-    characterImage.onload = () => {
-      console.log("Character texture loaded!");
-    };
-
-    backgroundImage.onerror = () => {
-      console.log("Failed to load grass texture!");
-    };
+    gameLoop(); // ✅ Game starts immediately
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -207,7 +189,7 @@ const GameCanvas = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} width={800} height={600} />;
+  return <canvas ref={canvasRef} width={1280} height={720} />;
 };
 
 export default GameCanvas;

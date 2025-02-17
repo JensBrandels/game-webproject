@@ -1,18 +1,19 @@
 import { Obstacle } from "../types/Obstacle";
 
-export const obstacleList: Obstacle[] = [
+export const obstaclesWithCollision: Obstacle[] = [
   {
     id: 1,
-    width: 150,
-    height: 200,
+    width: 100,
+    height: 60,
     hitbox: {
       width: 50,
-      height: 80,
-      offsetX: 50, // Moves the hitbox 50px right
-      offsetY: 120,
+      height: 50,
+      offsetX: 25, // Moves the hitbox 50px right
+      offsetY: -5,
     },
-    sprite: "/BigTree.png",
+    sprite: "/BigTreeTrunk.png", // 👈 Only the trunk part of the tree
     color: "green",
+    isTree: true,
   },
   {
     id: 2,

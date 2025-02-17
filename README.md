@@ -6,3 +6,8 @@ Comments :
 //\* Makes comments green
 
 I'll set up a system for this eventually to make it easier to spot important comments
+
+OBSTACLES XY SETTINGS
+
+X = left - right
+Y = up - down

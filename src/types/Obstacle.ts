@@ -10,4 +10,5 @@ export type Obstacle = {
   };
   sprite?: string;
   color: string;
+  isTree?: boolean;
 };
