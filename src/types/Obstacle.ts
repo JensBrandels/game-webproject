@@ -9,6 +9,7 @@ export type Obstacle = {
     offsetY?: number;
   };
   sprite?: string;
+  image?: HTMLImageElement;
   color: string;
   isTree?: boolean;
 };
