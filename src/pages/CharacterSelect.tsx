@@ -14,6 +14,8 @@ const CharacterSelect = () => {
     setSelectedCharacter(characterId);
   };
 
+  console.log(selectedCharacter);
+
   return (
     <div className="character-selection-main-container">
       <h1 className="character-selection-title">Select Your Character</h1>

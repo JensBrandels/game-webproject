@@ -6,13 +6,21 @@ import { Obstacle } from "../types/Obstacle";
 
 export type PlacedObstacle = Obstacle & { x: number; y: number };
 
-export const maps = [
+export type MapType = {
+  id: number;
+  background: string;
+  size: { width: number; height: number };
+  obstaclesWithCollision: PlacedObstacle[];
+  obstaclesForVisual: PlacedObstacle[];
+};
+
+export const maps: MapType[] = [
   {
     id: 1,
     background: "/grass.png",
     size: { width: 2000, height: 2000 },
 
-    // ✅ Split obstacles into two categories
+    //Split obstacles into two categories
     obstaclesWithCollision: [
       {
         x: 500,
