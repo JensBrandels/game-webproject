@@ -1,5 +1,5 @@
-import { obstaclesWithCollision } from "./ObstaclesWithCollision";
-import { obstacleForVisual } from "./obstacles/ObstaclesForVisual";
+import { obstaclesWithCollision } from "../editorLogic/obstacles/ObstaclesWithCollision";
+import { obstacleForVisual } from "../editorLogic/obstacles/ObstaclesForVisual";
 
 //types
 import { Obstacle } from "../types/Obstacle";

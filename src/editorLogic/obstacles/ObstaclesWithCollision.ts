@@ -1,4 +1,4 @@
-import { Obstacle } from "../types/Obstacle";
+import { Obstacle } from "../../types/Obstacle";
 
 export const obstaclesWithCollision: Obstacle[] = [
   {

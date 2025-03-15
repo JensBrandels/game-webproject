@@ -1,0 +1,27 @@
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(25, 32px);
+  grid-template-rows: repeat(25, 32px);
+  gap: 1px;
+}
+
+.grid-cell {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ccc;
+  background-color: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.asset-list img {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  margin: 5px;
+}
+
+.asset-list .selected {
+  border: 2px solid blue;
+}
