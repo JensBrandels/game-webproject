@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, FC } from "react";
 import "../styles/EditorCanvas.css";
 import { obstaclesWithCollision } from "../editorLogic/obstacles/ObstaclesWithCollision";
 import { obstacleForVisual } from "../editorLogic/obstacles/ObstaclesForVisual";
@@ -14,26 +14,24 @@ interface PlacedObject {
   type: "collision" | "visual";
 }
 
-interface MapData {
-  id: number;
-  background: string;
-  size: { width: number; height: number };
-  obstaclesWithCollision: PlacedObject[];
-  obstaclesForVisual: PlacedObject[];
-}
-
-const EditorCanvas: React.FC<{
+interface EditorCanvasProps {
   selectedAsset: string | null;
   setSelectedAsset: (asset: string | null) => void;
-}> = ({ selectedAsset, setSelectedAsset }) => {
-  const [mapData, setMapData] = useState<MapData>({
-    id: 1,
-    background: "/grass.png",
-    size: { width: GRID_SIZE * TILE_SIZE, height: GRID_SIZE * TILE_SIZE },
-    obstaclesWithCollision: [],
-    obstaclesForVisual: [],
-  });
+  mapData: {
+    id: string;
+    background: string;
+    size: { width: number; height: number };
+    obstaclesWithCollision: PlacedObject[];
+    obstaclesForVisual: PlacedObject[];
+  };
+  setMapData: (data: any) => void;
+}
 
+const EditorCanvas: FC<EditorCanvasProps> = ({
+  selectedAsset,
+  mapData,
+  setMapData,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [draggingObject, setDraggingObject] = useState<PlacedObject | null>(
     null
@@ -71,20 +69,18 @@ const EditorCanvas: React.FC<{
         const obstacle =
           obstaclesWithCollision.find((o) => o.sprite === asset) ||
           obstacleForVisual.find((o) => o.sprite === asset);
+        if (!obstacle) return;
 
-        if (obstacle && obstacle.sprite) {
-          const img = new Image();
-          img.src = obstacle.sprite;
-          img.onload = () => {
-            ctx.drawImage(img, x, y, obstacle.width, obstacle.height);
-
-            if (selectedObject && selectedObject.id === id) {
-              ctx.strokeStyle = "red";
-              ctx.lineWidth = 2;
-              ctx.strokeRect(x, y, obstacle.width, obstacle.height);
-            }
-          };
-        }
+        const img = new Image();
+        img.src = obstacle.sprite ?? "";
+        img.onload = () => {
+          ctx.drawImage(img, x, y, obstacle.width, obstacle.height);
+          if (selectedObject && selectedObject.id === id) {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, obstacle.width, obstacle.height);
+          }
+        };
       }
     );
   };
@@ -123,7 +119,7 @@ const EditorCanvas: React.FC<{
 
     if (!obstacle) return;
 
-    setMapData((prev) => {
+    setMapData((prev: any) => {
       const newMapData = { ...prev };
 
       const placedObject: PlacedObject = {
@@ -188,14 +184,15 @@ const EditorCanvas: React.FC<{
     const newX = event.clientX - rect.left;
     const newY = event.clientY - rect.top;
 
-    setMapData((prev) => {
+    setMapData((prev: any) => {
       const newMapData = { ...prev };
       newMapData.obstaclesWithCollision = newMapData.obstaclesWithCollision.map(
-        (obj) =>
+        (obj: PlacedObject) =>
           obj.id === draggingObject.id ? { ...obj, x: newX, y: newY } : obj
       );
-      newMapData.obstaclesForVisual = newMapData.obstaclesForVisual.map((obj) =>
-        obj.id === draggingObject.id ? { ...obj, x: newX, y: newY } : obj
+      newMapData.obstaclesForVisual = newMapData.obstaclesForVisual.map(
+        (obj: PlacedObject) =>
+          obj.id === draggingObject.id ? { ...obj, x: newX, y: newY } : obj
       );
       return newMapData;
     });
@@ -213,13 +210,13 @@ const EditorCanvas: React.FC<{
     const foundObject = findObjectAtPosition(x, y);
     if (!foundObject) return;
 
-    setMapData((prev) => ({
+    setMapData((prev: any) => ({
       ...prev,
       obstaclesWithCollision: prev.obstaclesWithCollision.filter(
-        (obj) => obj.id !== foundObject.id
+        (obj: PlacedObject) => obj.id !== foundObject.id
       ),
       obstaclesForVisual: prev.obstaclesForVisual.filter(
-        (obj) => obj.id !== foundObject.id
+        (obj: PlacedObject) => obj.id !== foundObject.id
       ),
     }));
 
@@ -228,11 +225,11 @@ const EditorCanvas: React.FC<{
 
   return (
     <div className="editor-container">
-      <button onClick={() => setSelectedAsset(null)}>Deselect Asset</button>
+      {/* <button onClick={() => setSelectedAsset(null)}>Deselect Asset</button> */}
       <canvas
         ref={canvasRef}
-        width={GRID_SIZE * TILE_SIZE}
-        height={GRID_SIZE * TILE_SIZE}
+        width={mapData.size.width}
+        height={mapData.size.height}
         className="editor-canvas"
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
