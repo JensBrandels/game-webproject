@@ -1,18 +1,31 @@
+.editor-container {
+  position: relative;
+  width: 2000px; /* ✅ Make sure it matches map size */
+  height: 2000px;
+}
+
+.editor-canvas {
+  border: 1px solid black;
+  display: block;
+  background-color: #eee;
+}
+
 .editor-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: grid;
-  grid-template-columns: repeat(25, 32px);
-  grid-template-rows: repeat(25, 32px);
-  gap: 1px;
+  grid-template-columns: repeat(63, 32px); /* ✅ Ensure full width */
+  grid-template-rows: repeat(63, 32px); /* ✅ Ensure full height */
+  width: 2000px;
+  height: 2000px;
+  pointer-events: none;
 }
 
 .grid-cell {
   width: 32px;
   height: 32px;
-  border: 1px solid #ccc;
-  background-color: #eee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .asset-list img {

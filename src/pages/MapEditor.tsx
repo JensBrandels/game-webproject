@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import EditorCanvas from "../editorLogic/EditorCanvas";
 import EditorControls from "../editorLogic/EditorControls";
 import { saveMap, loadSavedMaps, deleteMap } from "../game/mapDatabase";
+import TileSelector from "../editorLogic/TileSelector";
+import AssetBuilder from "../editorLogic/AssetBuilder";
 
-const GRID_SIZE = 25;
+const GRID_SIZE = 63;
 const TILE_SIZE = 32;
 
 const MapEditor = () => {
@@ -16,8 +18,8 @@ const MapEditor = () => {
   // This state holds the entire map data
   const [mapData, setMapData] = useState({
     id: mapId,
-    background: "/grass.png",
-    size: { width: GRID_SIZE * TILE_SIZE, height: GRID_SIZE * TILE_SIZE },
+    size: { width: 2000, height: 2000 },
+    background: [],
     obstaclesWithCollision: [],
     obstaclesForVisual: [],
   });
@@ -33,7 +35,6 @@ const MapEditor = () => {
     fetchMaps();
   }, []);
 
-  // Save map and refresh dropdown
   const handleSave = async () => {
     if (!mapName.trim()) {
       alert("Please enter a map name before saving.");
@@ -42,12 +43,24 @@ const MapEditor = () => {
 
     const newMapData = { ...mapData, id: mapId, name: mapName };
 
-    await saveMap(newMapData);
-    alert(`Map "${mapName}" saved successfully!`);
+    try {
+      console.log("Saving map:", newMapData);
 
-    // Refresh saved maps
-    const updatedMaps = await loadSavedMaps();
-    setSavedMaps(updatedMaps);
+      const response = await saveMap(newMapData);
+
+      if (!response || !response.message) {
+        throw new Error("Failed to save map - No response from backend.");
+      }
+
+      alert(`Map "${mapName}" saved successfully!`);
+
+      //Ensure we fetch the latest data after saving
+      const updatedMaps = await loadSavedMaps();
+      setSavedMaps(updatedMaps);
+    } catch (error) {
+      console.error("Error saving map:", error);
+      alert("Failed to save map. Check the console for details.");
+    }
   };
 
   // Load selected map
@@ -170,6 +183,10 @@ const MapEditor = () => {
         mapData={mapData}
         setMapData={setMapData}
       />
+
+      {/* TileSelector */}
+      <TileSelector tileSize={16} onSelect={setSelectedAsset} />
+      <AssetBuilder selectedAsset={selectedAsset} />
     </div>
   );
 };

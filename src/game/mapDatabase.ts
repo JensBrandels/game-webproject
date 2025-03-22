@@ -3,17 +3,25 @@ const API_URL = import.meta.env.VITE_API_URL;
 //Save a map to MongoDB
 export const saveMap = async (mapData: any) => {
   try {
-    const response = await fetch(`${API_URL}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(mapData),
     });
 
-    if (!response.ok) throw new Error("Failed to save map");
+    const data = await response.json();
 
-    console.log("Map saved:", mapData);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to save map: ${data.error || response.statusText}`
+      );
+    }
+
+    console.log("Map saved successfully:", data);
+    return data;
   } catch (error) {
     console.error("Error saving map:", error);
+    throw error;
   }
 };
 
