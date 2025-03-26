@@ -1,9 +1,10 @@
+import "../styles/MapEditor.css";
 import { useState, useEffect } from "react";
 import EditorCanvas from "../editorLogic/EditorCanvas";
-import EditorControls from "../editorLogic/EditorControls";
 import { saveMap, loadSavedMaps, deleteMap } from "../game/mapDatabase";
 import TileSelector from "../editorLogic/TileSelector";
 import AssetBuilder from "../editorLogic/AssetBuilder";
+import { loadAssets } from "../api/assets/assetApi";
 
 const GRID_SIZE = 63;
 const TILE_SIZE = 32;
@@ -14,25 +15,29 @@ const MapEditor = () => {
   const [mapId, setMapId] = useState(crypto.randomUUID());
   const [savedMaps, setSavedMaps] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [assets, setAssets] = useState<any[]>([]);
 
   // This state holds the entire map data
   const [mapData, setMapData] = useState({
     id: mapId,
-    size: { width: 2000, height: 2000 },
-    background: [],
-    obstaclesWithCollision: [],
-    obstaclesForVisual: [],
+    name: "",
+    size: { width: GRID_SIZE * TILE_SIZE, height: GRID_SIZE * TILE_SIZE },
+    placedObjects: [],
   });
 
   // Load saved maps from MongoDB (async)
   useEffect(() => {
-    const fetchMaps = async () => {
+    const fetchMapsAndAssets = async () => {
       setLoading(true);
       const maps = await loadSavedMaps();
+      const assetsFromDB = await loadAssets();
+
       setSavedMaps(maps);
+      setAssets(assetsFromDB);
       setLoading(false);
     };
-    fetchMaps();
+
+    fetchMapsAndAssets();
   }, []);
 
   const handleSave = async () => {
@@ -72,8 +77,10 @@ const MapEditor = () => {
 
       // Keep grid size consistent
       setMapData({
-        ...mapToLoad,
+        id: mapToLoad.id,
+        name: mapToLoad.name,
         size: { width: GRID_SIZE * TILE_SIZE, height: GRID_SIZE * TILE_SIZE },
+        placedObjects: mapToLoad.placedObjects || [],
       });
 
       alert(`Loaded map: ${mapToLoad.name}`);
@@ -117,6 +124,21 @@ const MapEditor = () => {
       console.error("Error updating map:", error);
     }
   };
+
+  // const getAssetBoundingBox = (asset: any) => {
+  //   const tiles = [...asset.tilesWithCollision, ...asset.tilesWithoutCollision];
+  //   if (tiles.length === 0) return null;
+
+  //   const maxX = Math.max(...tiles.map((t) => t.x));
+  //   const maxY = Math.max(...tiles.map((t) => t.y));
+
+  //   return {
+  //     tiles,
+  //     width: maxX / 16 + 1,
+  //     height: maxY / 16 + 1,
+  //     previewTile: tiles[0],
+  //   };
+  // };
 
   return (
     <div>
@@ -176,10 +198,58 @@ const MapEditor = () => {
       </div>
 
       {/* Editor Components */}
-      <EditorControls setSelectedAsset={setSelectedAsset} />
+      <div className="asset-selector-panel">
+        {assets.map((asset) => {
+          const allTiles = [
+            ...asset.tilesWithCollision,
+            ...asset.tilesWithoutCollision,
+          ];
+          if (allTiles.length === 0) return null;
+
+          const minX = Math.min(...allTiles.map((t) => t.x));
+          const minY = Math.min(...allTiles.map((t) => t.y));
+          const maxX = Math.max(...allTiles.map((t) => t.x));
+          const maxY = Math.max(...allTiles.map((t) => t.y));
+
+          const boxWidth = maxX - minX + 16;
+          const boxHeight = maxY - minY + 16;
+
+          return (
+            <div
+              key={asset.id}
+              className={`asset-preview-box ${
+                selectedAsset === asset.id ? "selected" : ""
+              }`}
+              onClick={() =>
+                setSelectedAsset((prev) =>
+                  prev === asset.id ? null : asset.id
+                )
+              }
+              style={{
+                width: `${boxWidth}px`,
+                height: `${boxHeight}px`,
+              }}
+            >
+              {allTiles.map((tile, index) => (
+                <img
+                  key={index}
+                  src={tile.asset}
+                  className="asset-preview-img"
+                  style={{
+                    left: `${tile.x - minX}px`,
+                    top: `${tile.y - minY}px`,
+                  }}
+                  alt=""
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
       <EditorCanvas
         selectedAsset={selectedAsset}
-        setSelectedAsset={setSelectedAsset}
+        assets={assets}
         mapData={mapData}
         setMapData={setMapData}
       />

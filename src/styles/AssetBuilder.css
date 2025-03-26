@@ -14,8 +14,8 @@
 }
 
 .asset-tile {
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
   /* border: 1px solid rgba(255, 255, 255, 0.05); */
   background-color: #2a2a2a;
   background-size: cover;
@@ -30,7 +30,7 @@
 }
 
 .hitbox-tile {
-  outline: 1px solid red;
+  outline: 1px solid blue;
 }
 
 .asset-name-input {
@@ -41,6 +41,10 @@
 
 .asset-row-select {
   margin-right: 6px;
+  height: 16px;
+  font-size: 10px;
+  padding: 0 4px;
+  line-height: 16px;
 }
 
 .asset-save-button {
@@ -66,4 +70,36 @@
 
 .asset-hitbox-toggle.active {
   background-color: #c0392b;
+}
+
+.hitbox-editor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: white;
+  min-width: 140px;
+  font-size: 14px;
+}
+.hitbox-editor-panel input {
+  width: 60px;
+  margin-left: 4px;
+}
+.hitbox-editor-panel label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hitbox-visual {
+  z-index: 2;
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.asset-builder-zoom {
+  transform: scale(2);
+  transform-origin: top left;
 }
