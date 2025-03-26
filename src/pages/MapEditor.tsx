@@ -1,10 +1,15 @@
 import "../styles/MapEditor.css";
 import { useState, useEffect } from "react";
 import EditorCanvas from "../editorLogic/EditorCanvas";
-import { saveMap, loadSavedMaps, deleteMap } from "../game/mapDatabase";
 import TileSelector from "../editorLogic/TileSelector";
 import AssetBuilder from "../editorLogic/AssetBuilder";
 import { loadAssets } from "../api/assets/assetApi";
+import {
+  saveMap,
+  loadSavedMaps,
+  deleteMap,
+  updateMap,
+} from "../api/maps/mapApi";
 
 const GRID_SIZE = 63;
 const TILE_SIZE = 32;
@@ -76,10 +81,11 @@ const MapEditor = () => {
       setMapName(mapToLoad.name);
 
       // Keep grid size consistent
+      console.log("Loaded mapToLoad:", mapToLoad);
       setMapData({
         id: mapToLoad.id,
         name: mapToLoad.name,
-        size: { width: GRID_SIZE * TILE_SIZE, height: GRID_SIZE * TILE_SIZE },
+        size: mapToLoad.size,
         placedObjects: mapToLoad.placedObjects || [],
       });
 
@@ -104,41 +110,27 @@ const MapEditor = () => {
       return;
     }
 
-    const updatedMapData = { ...mapData, id: mapId, name: mapName };
+    // Merge the name into mapData properly
+    const updatedMapData = { ...mapData, name: mapName };
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/${mapId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedMapData),
-      });
+      console.log("Sending this data to update:", updatedMapData);
 
-      if (!response.ok) throw new Error("Failed to update map");
+      const response = await updateMap(updatedMapData, updatedMapData.id);
+
+      if (!response || !response.message) {
+        throw new Error("Failed to update map - No response from backend.");
+      }
 
       alert(`Map "${mapName}" updated successfully!`);
 
-      // Refresh saved maps
       const updatedMaps = await loadSavedMaps();
       setSavedMaps(updatedMaps);
     } catch (error) {
       console.error("Error updating map:", error);
+      alert("Failed to update map. Check the console for details.");
     }
   };
-
-  // const getAssetBoundingBox = (asset: any) => {
-  //   const tiles = [...asset.tilesWithCollision, ...asset.tilesWithoutCollision];
-  //   if (tiles.length === 0) return null;
-
-  //   const maxX = Math.max(...tiles.map((t) => t.x));
-  //   const maxY = Math.max(...tiles.map((t) => t.y));
-
-  //   return {
-  //     tiles,
-  //     width: maxX / 16 + 1,
-  //     height: maxY / 16 + 1,
-  //     previewTile: tiles[0],
-  //   };
-  // };
 
   return (
     <div>

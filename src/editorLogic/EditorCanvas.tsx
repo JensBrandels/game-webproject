@@ -37,6 +37,9 @@ interface EditorCanvasProps {
   setMapData: (data: any) => void;
 }
 
+// Image cache to preload images
+const imageCache: Record<string, HTMLImageElement> = {};
+
 const EditorCanvas: FC<EditorCanvasProps> = ({
   selectedAsset,
   assets,
@@ -67,14 +70,16 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Get sorted zIndex values (Layer 0 first, then Layer 1, etc.)
     const sortedLayers = [
       ...new Set(mapData.placedObjects.map((o) => o.zIndex)),
     ].sort((a, b) => a - b);
 
+    // Loop through each zIndex layer and draw its corresponding objects
     sortedLayers.forEach((z) => {
       const objectsOnLayer = mapData.placedObjects
         .filter((obj) => obj.zIndex === z)
-        .sort((a, b) => a.id - b.id);
+        .sort((a, b) => a.id - b.id); // Sort objects in the same layer by their ID
 
       objectsOnLayer.forEach((obj) => {
         const asset = assets.find((a) => a.id === obj.asset);
@@ -89,10 +94,9 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
         const minX = Math.min(...tiles.map((t) => t.x));
         const minY = Math.min(...tiles.map((t) => t.y));
 
-        tiles.forEach(({ x, y, asset: sprite }) => {
-          const img = new Image();
-          img.src = sprite;
-          img.onload = () => {
+        tiles.forEach(({ x, y, asset: tileAsset }) => {
+          const img = imageCache[tileAsset];
+          if (img && img.complete) {
             ctx.drawImage(
               img,
               obj.x + (x - minX),
@@ -100,11 +104,12 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
               TILE_SIZE,
               TILE_SIZE
             );
-          };
+          }
         });
       });
     });
 
+    // Draw hover tile outline
     if (hoverTile && !draggingObject && selectedAsset) {
       ctx.strokeStyle = "lime";
       ctx.lineWidth = 1;
@@ -113,8 +118,21 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
   };
 
   useEffect(() => {
-    drawGrid();
-  }, [mapData, selectedObject, assets]);
+    // Preload images for each asset tile
+    assets.forEach((asset) => {
+      [...asset.tilesWithCollision, ...asset.tilesWithoutCollision].forEach(
+        (tile) => {
+          if (!imageCache[tile.asset]) {
+            const img = new Image();
+            img.src = tile.asset;
+            imageCache[tile.asset] = img;
+          }
+        }
+      );
+    });
+
+    drawGrid(); // Draw the grid after the images have been preloaded
+  }, [assets, mapData]); // Trigger redraw when assets or mapData change
 
   const handleLeftClick = (x: number, y: number) => {
     const snappedX = Math.floor(x / TILE_SIZE) * TILE_SIZE;
