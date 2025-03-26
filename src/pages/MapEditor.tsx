@@ -17,7 +17,7 @@ const MapEditor = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [assets, setAssets] = useState<any[]>([]);
 
-  // This state holds the entire map data
+  // This state holds the entire map data **
   const [mapData, setMapData] = useState({
     id: mapId,
     name: "",
