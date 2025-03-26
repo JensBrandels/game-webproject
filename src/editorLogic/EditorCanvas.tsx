@@ -1,35 +1,45 @@
 import { useEffect, useRef, useState, FC } from "react";
 import "../styles/EditorCanvas.css";
-import { obstaclesWithCollision } from "../editorLogic/obstacles/ObstaclesWithCollision";
-import { obstacleForVisual } from "../editorLogic/obstacles/ObstaclesForVisual";
 
-const TILE_SIZE = 32;
+const TILE_SIZE = 16;
+
+interface Tile {
+  x: number;
+  y: number;
+  asset: string;
+}
+
+interface Asset {
+  id: string;
+  name: string;
+  tilesWithCollision: Tile[];
+  tilesWithoutCollision: Tile[];
+}
 
 interface PlacedObject {
   id: number;
   x: number;
   y: number;
   asset: string;
-  type: "collision" | "visual" | "background";
+  zIndex: number;
   offsetX?: number;
   offsetY?: number;
 }
 
 interface EditorCanvasProps {
   selectedAsset: string | null;
-  setSelectedAsset: (asset: string | null) => void;
+  assets: Asset[];
   mapData: {
     id: string;
-    background: PlacedObject[];
     size: { width: number; height: number };
-    obstaclesWithCollision: PlacedObject[];
-    obstaclesForVisual: PlacedObject[];
+    placedObjects: PlacedObject[];
   };
   setMapData: (data: any) => void;
 }
 
 const EditorCanvas: FC<EditorCanvasProps> = ({
   selectedAsset,
+  assets,
   mapData,
   setMapData,
 }) => {
@@ -40,6 +50,14 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
   const [selectedObject, setSelectedObject] = useState<PlacedObject | null>(
     null
   );
+  const [hoverTile, setHoverTile] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const [activeZIndex, setActiveZIndex] = useState<number>(0);
+
+  if (!mapData?.placedObjects) {
+    return <div>Loading map...</div>;
+  }
 
   const drawGrid = () => {
     const canvas = canvasRef.current;
@@ -49,63 +67,60 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    mapData.background.forEach(({ x, y, asset }) => {
-      const img = new Image();
-      img.src = asset;
-      img.onload = () => ctx.drawImage(img, x, y, TILE_SIZE, TILE_SIZE);
+    const sortedLayers = [
+      ...new Set(mapData.placedObjects.map((o) => o.zIndex)),
+    ].sort((a, b) => a - b);
+
+    sortedLayers.forEach((z) => {
+      const objectsOnLayer = mapData.placedObjects
+        .filter((obj) => obj.zIndex === z)
+        .sort((a, b) => a.id - b.id);
+
+      objectsOnLayer.forEach((obj) => {
+        const asset = assets.find((a) => a.id === obj.asset);
+        if (!asset) return;
+
+        const tiles = [
+          ...asset.tilesWithCollision,
+          ...asset.tilesWithoutCollision,
+        ];
+        if (tiles.length === 0) return;
+
+        const minX = Math.min(...tiles.map((t) => t.x));
+        const minY = Math.min(...tiles.map((t) => t.y));
+
+        tiles.forEach(({ x, y, asset: sprite }) => {
+          const img = new Image();
+          img.src = sprite;
+          img.onload = () => {
+            ctx.drawImage(
+              img,
+              obj.x + (x - minX),
+              obj.y + (y - minY),
+              TILE_SIZE,
+              TILE_SIZE
+            );
+          };
+        });
+      });
     });
 
-    [...mapData.obstaclesWithCollision, ...mapData.obstaclesForVisual].forEach(
-      ({ x, y, asset, id }) => {
-        const obstacle =
-          obstaclesWithCollision.find((o) => o.sprite === asset) ||
-          obstacleForVisual.find((o) => o.sprite === asset);
-        if (!obstacle) return;
-
-        const img = new Image();
-        img.src = obstacle.sprite ?? "";
-        img.onload = () => {
-          ctx.drawImage(img, x, y, obstacle.width, obstacle.height);
-          if (selectedObject && selectedObject.id === id) {
-            ctx.strokeStyle = "red";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, obstacle.width, obstacle.height);
-          }
-        };
-      }
-    );
+    if (hoverTile && !draggingObject && selectedAsset) {
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(hoverTile.x, hoverTile.y, TILE_SIZE, TILE_SIZE);
+    }
   };
 
   useEffect(() => {
     drawGrid();
-  }, [mapData, selectedObject]);
-
-  const findObjectAtPosition = (x: number, y: number) => {
-    return (
-      [
-        ...mapData.background,
-        ...mapData.obstaclesWithCollision,
-        ...mapData.obstaclesForVisual,
-      ].find((obj) => {
-        const obstacle =
-          obstaclesWithCollision.find((o) => o.sprite === obj.asset) ||
-          obstacleForVisual.find((o) => o.sprite === obj.asset);
-
-        if (!obstacle) return false;
-
-        return (
-          x >= obj.x &&
-          x <= obj.x + obstacle.width &&
-          y >= obj.y &&
-          y <= obj.y + obstacle.height
-        );
-      }) || null
-    );
-  };
+  }, [mapData, selectedObject, assets]);
 
   const handleLeftClick = (x: number, y: number) => {
-    const foundObject = findObjectAtPosition(x, y);
+    const snappedX = Math.floor(x / TILE_SIZE) * TILE_SIZE;
+    const snappedY = Math.floor(y / TILE_SIZE) * TILE_SIZE;
 
+    const foundObject = findObjectAtPosition(snappedX, snappedY);
     if (foundObject) {
       setSelectedObject(foundObject);
       return;
@@ -113,67 +128,74 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
 
     if (!selectedAsset) return;
 
-    const obstacle =
-      obstaclesWithCollision.find((o) => o.sprite === selectedAsset) ||
-      obstacleForVisual.find((o) => o.sprite === selectedAsset);
-
-    if (!obstacle) return;
+    const placedObject: PlacedObject = {
+      id: performance.now(),
+      x: snappedX,
+      y: snappedY,
+      asset: selectedAsset,
+      zIndex: activeZIndex,
+    };
 
     setMapData((prev: any) => {
-      const newMapData = { ...prev };
-
-      const placedObject: PlacedObject = {
-        id: Date.now(),
-        x,
-        y,
-        asset: obstacle.sprite ?? "",
-        type: selectedAsset.includes("background")
-          ? "background"
-          : obstaclesWithCollision.some((o) => o.sprite === selectedAsset)
-          ? "collision"
-          : "visual",
+      const updated = {
+        ...prev,
+        placedObjects: [...prev.placedObjects, placedObject],
       };
 
-      if (placedObject.type === "background") {
-        newMapData.background = [...newMapData.background, placedObject];
-      } else if (placedObject.type === "collision") {
-        newMapData.obstaclesWithCollision = [
-          ...newMapData.obstaclesWithCollision,
-          placedObject,
-        ];
-      } else {
-        newMapData.obstaclesForVisual = [
-          ...newMapData.obstaclesForVisual,
-          placedObject,
-        ];
-      }
-
-      return newMapData;
+      console.log("Updated mapData after placement:", updated);
+      return updated;
     });
+  };
+
+  const findObjectAtPosition = (x: number, y: number): PlacedObject | null => {
+    const sorted = [...mapData.placedObjects].sort(
+      (a, b) => b.zIndex - a.zIndex
+    );
+
+    return (
+      sorted.find((obj) => {
+        const asset = assets.find((a) => a.id === obj.asset);
+        if (!asset) return false;
+
+        const tiles = [
+          ...asset.tilesWithCollision,
+          ...asset.tilesWithoutCollision,
+        ];
+        if (tiles.length === 0) return false;
+
+        const minX = Math.min(...tiles.map((t) => t.x));
+        const minY = Math.min(...tiles.map((t) => t.y));
+        const maxX = Math.max(...tiles.map((t) => t.x));
+        const maxY = Math.max(...tiles.map((t) => t.y));
+
+        const width = maxX - minX + TILE_SIZE;
+        const height = maxY - minY + TILE_SIZE;
+
+        return (
+          x >= obj.x && x < obj.x + width && y >= obj.y && y < obj.y + height
+        );
+      }) || null
+    );
   };
 
   const handleMouseDown = (event: React.MouseEvent) => {
     if (event.button === 2) return;
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
+    const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    const foundObject = findObjectAtPosition(mouseX, mouseY);
+    const snappedX = Math.floor(mouseX / TILE_SIZE) * TILE_SIZE;
+    const snappedY = Math.floor(mouseY / TILE_SIZE) * TILE_SIZE;
+
+    const foundObject = findObjectAtPosition(snappedX, snappedY);
 
     if (foundObject) {
-      const obstacle =
-        obstaclesWithCollision.find((o) => o.sprite === foundObject.asset) ||
-        obstacleForVisual.find((o) => o.sprite === foundObject.asset);
-
-      if (!obstacle) return;
-
-      // Store offset so we grab from center
-      const offsetX = mouseX - (foundObject.x + obstacle.width / 2);
-      const offsetY = mouseY - (foundObject.y + obstacle.height / 2);
-
+      const offsetX = mouseX - foundObject.x;
+      const offsetY = mouseY - foundObject.y;
       setDraggingObject({ ...foundObject, offsetX, offsetY });
       setSelectedObject(foundObject);
     } else {
@@ -186,40 +208,47 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
   };
 
   const handleMouseUp = () => {
+    if (draggingObject) {
+      const placed = mapData.placedObjects.find(
+        (obj) => obj.id === draggingObject.id
+      );
+      if (placed) {
+        console.log("Updated position in mapData:", placed);
+      }
+    }
+
     setDraggingObject(null);
   };
 
   const handleMouseMove = (event: React.MouseEvent) => {
-    if (!draggingObject) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
+    const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    // Ensure offsetX and offsetY exist before using them
-    const newX = mouseX - (draggingObject.offsetX || 0);
-    const newY = mouseY - (draggingObject.offsetY || 0);
+    const hoverX = Math.floor(mouseX / TILE_SIZE) * TILE_SIZE;
+    const hoverY = Math.floor(mouseY / TILE_SIZE) * TILE_SIZE;
+    setHoverTile({ x: hoverX, y: hoverY });
+
+    if (!draggingObject) return;
+
+    const newX =
+      Math.floor((mouseX - (draggingObject.offsetX || 0)) / TILE_SIZE) *
+      TILE_SIZE;
+    const newY =
+      Math.floor((mouseY - (draggingObject.offsetY || 0)) / TILE_SIZE) *
+      TILE_SIZE;
 
     setMapData((prev: any) => {
-      const newMapData = { ...prev };
-
-      newMapData.background = newMapData.background.map((obj: PlacedObject) =>
-        obj.id === draggingObject.id ? { ...obj, x: newX, y: newY } : obj
-      );
-
-      newMapData.obstaclesWithCollision = newMapData.obstaclesWithCollision.map(
-        (obj: PlacedObject) =>
+      const updated = {
+        ...prev,
+        placedObjects: prev.placedObjects.map((obj: PlacedObject) =>
           obj.id === draggingObject.id ? { ...obj, x: newX, y: newY } : obj
-      );
-
-      newMapData.obstaclesForVisual = newMapData.obstaclesForVisual.map(
-        (obj: PlacedObject) =>
-          obj.id === draggingObject.id ? { ...obj, x: newX, y: newY } : obj
-      );
-
-      return newMapData;
+        ),
+      };
+      return updated;
     });
   };
 
@@ -232,18 +261,15 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    const foundObject = findObjectAtPosition(x, y);
+    const snappedX = Math.floor(x / TILE_SIZE) * TILE_SIZE;
+    const snappedY = Math.floor(y / TILE_SIZE) * TILE_SIZE;
+
+    const foundObject = findObjectAtPosition(snappedX, snappedY);
     if (!foundObject) return;
 
     setMapData((prev: any) => ({
       ...prev,
-      background: prev.background.filter(
-        (obj: PlacedObject) => obj.id !== foundObject.id
-      ),
-      obstaclesWithCollision: prev.obstaclesWithCollision.filter(
-        (obj: PlacedObject) => obj.id !== foundObject.id
-      ),
-      obstaclesForVisual: prev.obstaclesForVisual.filter(
+      placedObjects: prev.placedObjects.filter(
         (obj: PlacedObject) => obj.id !== foundObject.id
       ),
     }));
@@ -253,6 +279,18 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
 
   return (
     <div className="editor-container">
+      <div style={{ marginBottom: "8px" }}>
+        <label>
+          <select
+            value={activeZIndex}
+            onChange={(e) => setActiveZIndex(Number(e.target.value))}
+          >
+            <option value={0}>Layer 0 (Background)</option>
+            <option value={1}>Layer 1 (Collision)</option>
+          </select>
+        </label>
+      </div>
+
       <canvas
         ref={canvasRef}
         width={mapData.size.width}
@@ -264,13 +302,12 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
         onContextMenu={handleRightClick}
       />
 
-      {/* Tooltip for selected object */}
       {selectedObject && (
         <div
           className="tooltip"
           style={{
             position: "absolute",
-            left: `${selectedObject.x + 0}px`,
+            left: `${selectedObject.x}px`,
             top: `${selectedObject.y - 60}px`,
             background: "rgba(0,0,0,0.7)",
             color: "white",
@@ -282,7 +319,7 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
         >
           <div>x: {selectedObject.x}</div>
           <div>y: {selectedObject.y}</div>
-          {selectedObject.type === "collision" && <div>hitbox: ✅ Yes</div>}
+          <div>layer: Layer {selectedObject.zIndex}</div>
         </div>
       )}
     </div>
