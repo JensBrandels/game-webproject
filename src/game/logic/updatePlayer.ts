@@ -38,7 +38,7 @@ export const updatePlayer = (
       newX,
       newY,
       selectedCharacter,
-      selectedMap.obstaclesWithCollision
+      selectedMap.obstaclesWithCollision || []
     )
   ) {
     player.x = newX;

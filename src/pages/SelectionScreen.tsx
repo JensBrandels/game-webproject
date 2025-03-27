@@ -1,20 +1,37 @@
 import "../styles/CharacterSelect.css";
-import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-//importing the characters
+// Importing the characters
 import { characters } from "../game/Characters";
+// importing the maps
+import MapComponent from "../components/MapComponent";
 
-const CharacterSelect = () => {
+const SelectionScreen = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<number | null>(
     null
   );
+  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+
+  const handleSelectMap = (mapId: string) => {
+    setSelectedMapId(mapId);
+  };
 
   const handleCharacterClick = (characterId: number) => {
     setSelectedCharacter(characterId);
   };
 
-  console.log(selectedCharacter);
+  const navigate = useNavigate();
+  // console.log(selectedCharacter);
+
+  const handleStartGame = () => {
+    navigate("/game", {
+      state: {
+        selectedMapId,
+        selectedCharacterId: selectedCharacter,
+      },
+    });
+  };
 
   return (
     <div className="character-selection-main-container">
@@ -51,11 +68,17 @@ const CharacterSelect = () => {
           </div>
         ))}
       </div>
+      <div>
+        <MapComponent
+          onSelectMap={handleSelectMap}
+          selectedMapId={selectedMapId} // Pass selectedMapId here
+        />
+      </div>
       <div className="character-selection-startgame">
-        <Link to="/game">Start Game</Link>
+        <button onClick={handleStartGame}>Start Game</button>
       </div>
     </div>
   );
 };
 
-export default CharacterSelect;
+export default SelectionScreen;
