@@ -1,51 +1,62 @@
 export const characters = [
   {
     id: 1,
-    name: "Viking",
-    sprite: "/NorthernHuman.png",
+    name: "Player",
     hitbox: {
-      width: 40,
-      height: 60,
-      offsetX: 35,
-      offsetY: 15,
+      width: 16,
+      height: 16,
+      offsetX: 8,
+      offsetY: 6,
     },
     hp: 120,
     mp: 0,
-    movementSpeed: 3,
+    movementSpeed: 5,
     attackSpeed: 1.2,
     weapons: [],
-  },
-  {
-    id: 2,
-    name: "Thrall",
-    sprite: "/Dwarf.png",
-    hitbox: { width: 40, height: 60 },
-    hp: 50,
-    mp: 0,
-    movementSpeed: 2,
-    attackSpeed: 1.2,
-    weapons: [],
-  },
-  {
-    id: 3,
-    name: "Thrall",
-    sprite: "/Dwarf.png",
-    hitbox: { width: 40, height: 60 },
-    hp: 50,
-    mp: 0,
-    movementSpeed: 2,
-    attackSpeed: 1.2,
-    weapons: [],
-  },
-  {
-    id: 4,
-    name: "Thrall",
-    sprite: "/Dwarf.png",
-    hitbox: { width: 40, height: 60 },
-    hp: 50,
-    mp: 0,
-    movementSpeed: 2,
-    attackSpeed: 1.2,
-    weapons: [],
+    animations: {
+      idle: {
+        sheet: "/IdlePlayer.png",
+        frames: Array.from({ length: 12 }, (_, i) => ({
+          x: 0,
+          y: i * 32,
+        })),
+      },
+      walk: {
+        down: {
+          sheet: "/PlayerDownWalk.png",
+          frames: Array.from({ length: 6 }, (_, i) => ({ x: 0, y: i * 32 })),
+        },
+        up: {
+          sheet: "/PlayerUpWalk.png",
+          frames: Array.from({ length: 6 }, (_, i) => ({ x: 0, y: i * 32 })),
+        },
+        left: {
+          sheet: "/PlayerLeftWalk.png",
+          frames: Array.from({ length: 6 }, (_, i) => ({ x: 0, y: i * 32 })),
+        },
+        right: {
+          sheet: "/PlayerRightWalk.png",
+          frames: Array.from({ length: 6 }, (_, i) => ({ x: 0, y: i * 32 })),
+        },
+      },
+      hurt: {
+        sheet: "/Soldier-Hurt.png",
+        frames: [
+          { x: 5, y: 34 },
+          { x: 38, y: 34 },
+          { x: 71, y: 34 },
+          { x: 104, y: 34 },
+        ],
+      },
+      death: {
+        sheet: "/Soldier-Death.png",
+        frames: [
+          { x: 5, y: 34 },
+          { x: 38, y: 34 },
+          { x: 71, y: 34 },
+          { x: 104, y: 34 },
+        ],
+      },
+    },
   },
 ];

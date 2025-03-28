@@ -2,36 +2,46 @@ export const checkCollision = (
   x: number,
   y: number,
   player: any,
-  obstacles: any[]
+  obstacles: any[],
+  ctx?: CanvasRenderingContext2D,
+  camera?: { x: number; y: number }
 ) => {
-  const playerHitbox = player.hitbox || { width: 100, height: 100 };
-  const playerOffsetX = player.hitbox?.offsetX || 0;
-  const playerOffsetY = player.hitbox?.offsetY || 0;
+  const hitbox = player.hitbox || {
+    width: 16,
+    height: 16,
+    offsetX: 0,
+    offsetY: 0,
+  };
 
-  // Adjusted player hitbox position
-  const playerX = x + playerOffsetX;
-  const playerY = y + playerOffsetY;
+  const playerX = x - hitbox.offsetX;
+  const playerY = y - hitbox.offsetY;
+
+  if (ctx && camera) {
+    // Force yellow hitbox drawing
+    ctx.fillStyle = "rgba(255, 255, 0, 0.3)";
+    ctx.fillRect(
+      playerX - camera.x,
+      playerY - camera.y,
+      hitbox.width,
+      hitbox.height
+    );
+
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      playerX - camera.x,
+      playerY - camera.y,
+      hitbox.width,
+      hitbox.height
+    );
+  }
 
   return obstacles.some((obj) => {
-    const hitbox = obj.hitbox || { width: obj.width, height: obj.height };
-    const obstacleOffsetX = obj.hitbox?.offsetX || 0;
-    const obstacleOffsetY = obj.hitbox?.offsetY || 0;
-
-    // Ensure the obstacle hitbox is properly aligned
-    const hitboxX = obj.x + obstacleOffsetX;
-    const hitboxY = obj.y + obstacleOffsetY;
-
-    const isCollidingFromSides =
-      playerX + playerHitbox.width > hitboxX &&
-      playerX < hitboxX + hitbox.width;
-
-    const isCollidingFromTop =
-      playerY + playerHitbox.height > hitboxY &&
-      playerY < hitboxY + hitbox.height;
-
-    const isCollidingFromBottom =
-      playerY + playerHitbox.height < hitboxY + hitbox.height + 10;
-
-    return isCollidingFromSides && isCollidingFromTop && isCollidingFromBottom;
+    return (
+      playerX + hitbox.width > obj.x &&
+      playerX < obj.x + obj.width &&
+      playerY + hitbox.height > obj.y &&
+      playerY < obj.y + obj.height
+    );
   });
 };

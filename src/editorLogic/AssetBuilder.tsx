@@ -33,6 +33,14 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
   const [anchorX, setAnchorX] = useState<"left" | "right">("left");
   const [anchorY, setAnchorY] = useState<"top" | "bottom">("top");
 
+  const handleRowTypeChange = (row: number, value: string) => {
+    setRowTypes((prev) => {
+      const updated = [...prev];
+      updated[row] = value;
+      return updated;
+    });
+  };
+
   const handleTileClick = (row: number, col: number) => {
     if (hitboxMode) {
       toggleHitboxAt(row, col);
@@ -67,14 +75,6 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
         setSelectedHitbox(newTile);
         return [...prev, newTile];
       }
-    });
-  };
-
-  const handleRowTypeChange = (row: number, type: string) => {
-    setRowTypes((prev) => {
-      const updated = [...prev];
-      updated[row] = type;
-      return updated;
     });
   };
 
@@ -128,6 +128,21 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
   };
 
   const handleSave = async () => {
+    const tilePositions: { x: number; y: number }[] = [];
+
+    grid.forEach((row, rowIndex) => {
+      row.forEach((tile, colIndex) => {
+        if (!tile) return;
+        tilePositions.push({
+          x: colIndex * TILE_SIZE,
+          y: rowIndex * TILE_SIZE,
+        });
+      });
+    });
+
+    const minX = Math.min(...tilePositions.map((p) => p.x));
+    const minY = Math.min(...tilePositions.map((p) => p.y));
+
     const tilesWithCollision: any[] = [];
     const tilesWithoutCollision: any[] = [];
 
@@ -136,8 +151,8 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
         if (!tile) return;
 
         const tileData = {
-          x: colIndex * TILE_SIZE,
-          y: rowIndex * TILE_SIZE,
+          x: colIndex * TILE_SIZE - minX,
+          y: rowIndex * TILE_SIZE - minY,
           asset: tile,
         };
 
@@ -151,8 +166,8 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
 
     const hitbox = hitboxTiles.map(
       ({ row, col, width, height, offsetX, offsetY }) => ({
-        x: col * TILE_SIZE + offsetX,
-        y: row * TILE_SIZE + offsetY,
+        x: col * TILE_SIZE + offsetX - minX,
+        y: row * TILE_SIZE + offsetY - minY,
         width,
         height,
       })
@@ -165,8 +180,6 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
       tilesWithoutCollision,
       hitbox,
     };
-
-    console.log("Built Asset:", result);
 
     try {
       const response = await fetch(import.meta.env.VITE_ASSET_API_URL, {
@@ -197,6 +210,7 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
 
   return (
     <div className="asset-builder-container">
+      {/* Input & Controls */}
       <div style={{ marginBottom: "10px" }}>
         <input
           type="text"
@@ -205,21 +219,19 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
           placeholder="Enter asset name"
           className="asset-name-input"
         />
-
         <button
           className={`asset-hitbox-toggle ${hitboxMode ? "active" : ""}`}
           onClick={() => setHitboxMode((prev) => !prev)}
         >
           {hitboxMode ? "Disable Hitbox Mode" : "Enable Hitbox Mode"}
         </button>
-
         <button className="asset-save-button" onClick={handleSave}>
           Save Asset
         </button>
       </div>
 
+      {/* Builder */}
       <div style={{ display: "flex", gap: "20px" }}>
-        {/* Zoom wrapper */}
         <div className="asset-builder-zoom">
           <div className="asset-builder-grid">
             {grid.map((row, rowIndex) => (
@@ -239,14 +251,11 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
                   const hitbox = hitboxTiles.find(
                     (t) => t.row === rowIndex && t.col === colIndex
                   );
-                  const isHitbox = !!hitbox;
 
                   return (
                     <div key={colIndex} style={{ position: "relative" }}>
                       <div
-                        className={`asset-tile ${
-                          isHitbox ? "hitbox-tile" : ""
-                        }`}
+                        className={`asset-tile ${hitbox ? "hitbox-tile" : ""}`}
                         style={{
                           backgroundImage: tile ? `url(${tile})` : "none",
                         }}
@@ -263,7 +272,6 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
                             height: `${hitbox.height}px`,
                             border: "1px solid red",
                             backgroundColor: "rgba(255, 0, 0, 0.1)",
-                            boxSizing: "border-box",
                             pointerEvents: "none",
                             zIndex: 2,
                           }}
@@ -277,11 +285,10 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
           </div>
         </div>
 
-        {/* Hitbox editor panel */}
+        {/* Editor */}
         {selectedHitbox && (
           <div className="hitbox-editor-panel">
             <h4>Hitbox Editor</h4>
-
             <label>
               Expand From (X):
               <select
@@ -292,7 +299,6 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
                 <option value="right">Right</option>
               </select>
             </label>
-
             <label>
               Expand From (Y):
               <select
@@ -303,11 +309,9 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
                 <option value="bottom">Bottom</option>
               </select>
             </label>
-
             <p>
               Tile: ({selectedHitbox.row}, {selectedHitbox.col})
             </p>
-
             <label>
               W:
               <input

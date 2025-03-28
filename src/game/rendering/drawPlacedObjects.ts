@@ -8,6 +8,8 @@ const loadImage = (src: string): HTMLImageElement => {
   return img;
 };
 
+let hasLogged = false;
+
 export const drawPlacedObjects = (
   ctx: CanvasRenderingContext2D,
   placedObjects: any[],
@@ -20,6 +22,18 @@ export const drawPlacedObjects = (
   placedObjects.forEach((obj: any) => {
     const { x, y, assetData } = obj;
     if (!assetData) return;
+
+    // Log only once
+    if (!hasLogged && stage === "background") {
+      hasLogged = true;
+      console.log("PLACED OBJECT:", { x, y });
+      console.log(
+        "TILES:",
+        assetData.tilesWithCollision,
+        assetData.tilesWithoutCollision
+      );
+      console.log("HITBOXES:", assetData.hitbox);
+    }
 
     if (obj.zIndex === 0 && stage === "background") {
       [
@@ -51,12 +65,21 @@ export const drawPlacedObjects = (
 
       if (collisionCollector) {
         assetData.hitbox.forEach((hit: any) => {
+          const hitboxX = x + hit.x;
+          const hitboxY = y + hit.y;
+          const width = hit.width || 16;
+          const height = hit.height || 16;
+
           collisionCollector.push({
-            x: x + hit.x,
-            y: y + hit.y,
-            width: 16,
-            height: 16,
+            x: hitboxX,
+            y: hitboxY,
+            width,
+            height,
+            hitbox: { width, height, offsetX: 0, offsetY: 0 }, // <- important!
           });
+
+          // ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+          // ctx.fillRect(hitboxX - camera.x, hitboxY - camera.y, width, height);
         });
       }
     }
