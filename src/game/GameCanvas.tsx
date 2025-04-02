@@ -12,6 +12,8 @@ type GameCanvasProps = {
 
 const GameCanvas = ({ selectedMap, selectedCharacter }: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
+  const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const playerRef = useRef({
     x: 100,
     y: 100,
@@ -56,25 +58,59 @@ const GameCanvas = ({ selectedMap, selectedCharacter }: GameCanvasProps) => {
 
   useEffect(() => {
     if (Object.keys(spriteSheets).length === 0) return;
+
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    const backgroundCanvas = backgroundCanvasRef.current;
+    const bgCtx = backgroundCanvas?.getContext("2d");
+
+    if (!canvas || !ctx || !backgroundCanvas || !bgCtx) return;
+
+    // Setup offscreen canvas
+    offscreenCanvasRef.current = document.createElement("canvas");
+    offscreenCanvasRef.current.width = selectedMap.size.width;
+    offscreenCanvasRef.current.height = selectedMap.size.height;
+
+    const offCtx = offscreenCanvasRef.current.getContext("2d");
+    if (!offCtx) return;
+
+    // Draw background + collision to offscreen canvas
+    selectedMap.obstaclesWithCollision = [];
+    drawPlacedObjects(
+      offCtx,
+      selectedMap.placedObjects,
+      { x: 0, y: 0 },
+      "background"
+    );
+    drawPlacedObjects(
+      offCtx,
+      selectedMap.placedObjects,
+      { x: 0, y: 0 },
+      "collision",
+      selectedMap.obstaclesWithCollision
+    );
 
     let animationFrameId: number;
 
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const obstacles: any[] = [];
-
-      drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "background");
-      drawPlacedObjects(
-        ctx,
-        selectedMap.placedObjects,
-        camera,
-        "collision",
-        obstacles
+      // Draw visible portion of map from offscreen canvas
+      bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+      bgCtx.drawImage(
+        offscreenCanvasRef.current!,
+        camera.x,
+        camera.y,
+        backgroundCanvas.width,
+        backgroundCanvas.height,
+        0,
+        0,
+        backgroundCanvas.width,
+        backgroundCanvas.height
       );
 
+      // Clear top canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw player
       drawPlayer(
         ctx,
         playerRef.current,
@@ -83,14 +119,8 @@ const GameCanvas = ({ selectedMap, selectedCharacter }: GameCanvasProps) => {
         spriteSheets
       );
 
+      // Now draw zIndex=1 visual-only tiles *after* player
       drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
-      selectedMap.obstaclesWithCollision = obstacles;
-
-      // obstacles.forEach((hitbox) => {
-      //   ctx.strokeStyle = "blue";
-      //   ctx.lineWidth = 1;
-      //   ctx.strokeRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
-      // });
     };
 
     const gameLoop = () => {
@@ -113,7 +143,22 @@ const GameCanvas = ({ selectedMap, selectedCharacter }: GameCanvasProps) => {
     return () => cancelAnimationFrame(animationFrameId);
   }, [spriteSheets, selectedCharacter.id, selectedMap.id]);
 
-  return <canvas ref={canvasRef} width={1280} height={720} />;
+  return (
+    <>
+      <canvas
+        ref={backgroundCanvasRef}
+        width={1280}
+        height={720}
+        style={{ position: "absolute", top: 0, left: 0 }}
+      />
+      <canvas
+        ref={canvasRef}
+        width={1280}
+        height={720}
+        style={{ position: "absolute", top: 0, left: 0 }}
+      />
+    </>
+  );
 };
 
 export default GameCanvas;

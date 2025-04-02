@@ -10,7 +10,7 @@ export const characters = [
     },
     hp: 120,
     mp: 0,
-    movementSpeed: 5,
+    movementSpeed: 2,
     attackSpeed: 1.2,
     weapons: [],
     animations: {
