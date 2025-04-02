@@ -1,13 +1,13 @@
-import "./MapComponent.css";
+import "./style.css";
 import { useState, useEffect } from "react";
-import { loadSavedMaps } from "../api/maps/mapApi";
+import { loadSavedMaps } from "../../../../../../src/api/maps/mapApi";
 
 interface MapComponentProps {
   onSelectMap: (mapId: string) => void;
   selectedMapId: string | null;
 }
 
-const MapComponent: React.FC<MapComponentProps> = ({
+export const MapComponent: React.FC<MapComponentProps> = ({
   onSelectMap,
   selectedMapId,
 }) => {
@@ -71,5 +71,3 @@ const MapComponent: React.FC<MapComponentProps> = ({
     </div>
   );
 };
-
-export default MapComponent;

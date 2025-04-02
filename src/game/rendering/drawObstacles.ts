@@ -1,4 +1,4 @@
-import { PlacedObstacle } from "../Maps";
+import type { PlacedObstacle } from "../Maps";
 
 // Function to draw obstacles that have collision (rocks, tree trunks, etc.)
 export const drawCollidableObstacles = (

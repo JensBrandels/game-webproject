@@ -1,4 +1,42 @@
-export const characters = [
+type Frame = {
+  x: number;
+  y: number;
+};
+
+type Animation = {
+  sheet: string;
+  frames: Frame[];
+};
+
+export type Character = {
+  id: number;
+  name: string;
+  sprite?: string;
+  hitbox: {
+    width: number;
+    height: number;
+    offsetX: number;
+    offsetY: number;
+  };
+  hp: number;
+  mp: number;
+  movementSpeed: number;
+  attackSpeed: number;
+  weapons: any[];
+  animations: {
+    idle: Animation;
+    walk: {
+      up: Animation;
+      down: Animation;
+      left: Animation;
+      right: Animation;
+    };
+    hurt: Animation;
+    death: Animation;
+  };
+};
+
+export const characters: Character[] = [
   {
     id: 1,
     name: "Player",

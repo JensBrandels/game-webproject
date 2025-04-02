@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import GameCanvas from "../game/GameCanvas";
-import { characters } from "../game/Characters";
-import { getMapById } from "../api/maps/mapApi";
-import { loadAssets } from "../api/assets/assetApi";
+import { GameCanvas } from "@viking/game-canvas";
+import { characters } from "@viking/characters";
+import { getMapById } from "../../../../src/api/maps/mapApi";
+import { loadAssets } from "../../../../src/api/assets/assetApi";
 
-const GameScreen = () => {
+export const GameScreen = () => {
   const location = useLocation();
   const { selectedMapId, selectedCharacterId } = location.state || {};
 
@@ -48,5 +48,3 @@ const GameScreen = () => {
     />
   );
 };
-
-export default GameScreen;

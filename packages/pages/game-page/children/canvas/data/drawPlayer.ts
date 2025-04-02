@@ -1,4 +1,4 @@
-import { characters } from "../Characters";
+import { characters } from "@viking/characters";
 
 const animationState = new Map<
   number,

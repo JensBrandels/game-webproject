@@ -1,13 +1,13 @@
-import "../styles/CharacterSelect.css";
+import "./style.css";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Importing the characters
-import { characters } from "../game/Characters";
+import { characters } from "@viking/characters";
 // importing the maps
-import MapComponent from "../components/MapComponent";
+import { MapComponent } from "@viking/map-selection";
 
-const SelectionScreen = () => {
+export const SelectionScreen = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<number | null>(
     null
   );
@@ -80,5 +80,3 @@ const SelectionScreen = () => {
     </div>
   );
 };
-
-export default SelectionScreen;

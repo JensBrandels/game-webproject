@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { drawPlayer } from "./rendering/drawPlayer";
-import { updatePlayer } from "./logic/updatePlayer";
-import { setupInputHandlers } from "./logic/handleInput";
-import { drawPlacedObjects } from "./rendering/drawPlacedObjects";
-import { characters } from "./Characters";
+import { drawPlayer } from "../data/drawPlayer";
+import { updatePlayer } from "../data/updatePlayer";
+import { setupInputHandlers } from "../data/handleInput";
+import { drawPlacedObjects } from "../data/drawPlacedObjects";
+import { characters } from "@viking/characters";
 
 type GameCanvasProps = {
   selectedMap: any;
   selectedCharacter: any;
 };
 
-const GameCanvas = ({ selectedMap, selectedCharacter }: GameCanvasProps) => {
+export const GameCanvas = ({
+  selectedMap,
+  selectedCharacter,
+}: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -160,5 +163,3 @@ const GameCanvas = ({ selectedMap, selectedCharacter }: GameCanvasProps) => {
     </>
   );
 };
-
-export default GameCanvas;

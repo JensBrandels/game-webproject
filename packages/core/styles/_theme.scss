@@ -1,0 +1,15 @@
+// Color Theme - Viking
+$color-bg: #1b1a17;
+$color-text: #e4e4e4;
+$color-accent: #d97706; // burnt gold
+$color-danger: #991b1b; // blood red
+$color-muted: #555;
+
+// Exported theme map if needed
+$theme: (
+  bg: $color-bg,
+  text: $color-text,
+  accent: $color-accent,
+  danger: $color-danger,
+  muted: $color-muted,
+);

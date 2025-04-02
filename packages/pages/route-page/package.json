@@ -1,0 +1,4 @@
+{
+  "name": "@viking/router-page",
+  "main": "./index.ts"
+}

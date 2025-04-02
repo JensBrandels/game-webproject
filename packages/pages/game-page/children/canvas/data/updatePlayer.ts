@@ -1,7 +1,7 @@
-import { RefObject } from "react";
-import { checkCollision } from "../Collision";
-import { MapType } from "../Maps";
-import { characters } from "../Characters";
+import type { RefObject } from "react";
+import { checkCollision } from "../../../../../../src/game/Collision";
+import type { MapType } from "../../../../../../src/game/Maps";
+import { characters } from "@viking/characters";
 
 export const updatePlayer = (
   player: {

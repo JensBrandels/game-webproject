@@ -2,7 +2,7 @@ import { obstaclesWithCollision } from "../editorLogic/obstacles/ObstaclesWithCo
 import { obstacleForVisual } from "../editorLogic/obstacles/ObstaclesForVisual";
 
 //types
-import { Obstacle } from "../types/Obstacle";
+import type { Obstacle } from "../types/Obstacle";
 
 export type PlacedObstacle = Obstacle & { x: number; y: number };
 
