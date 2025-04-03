@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, FC } from "react";
-import "../styles/EditorCanvas.css";
+import "./style.css";
 
 const TILE_SIZE = 16;
 
@@ -40,7 +40,7 @@ interface EditorCanvasProps {
 // Image cache to preload images
 const imageCache: Record<string, HTMLImageElement> = {};
 
-const EditorCanvas: FC<EditorCanvasProps> = ({
+export const EditorCanvas: FC<EditorCanvasProps> = ({
   selectedAsset,
   assets,
   mapData,
@@ -343,5 +343,3 @@ const EditorCanvas: FC<EditorCanvasProps> = ({
     </div>
   );
 };
-
-export default EditorCanvas;

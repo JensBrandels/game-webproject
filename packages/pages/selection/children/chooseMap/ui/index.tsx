@@ -1,6 +1,6 @@
 import "./style.css";
 import { useState, useEffect } from "react";
-import { loadSavedMaps } from "../../../../../../src/api/maps/mapApi";
+import { loadSavedMaps } from "../../../../../core/api/map/mapApi";
 
 interface MapComponentProps {
   onSelectMap: (mapId: string) => void;

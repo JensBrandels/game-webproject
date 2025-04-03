@@ -1,0 +1,4 @@
+{
+  "name": "@viking/editor-canvas",
+  "main": "./index.ts"
+}

@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
-import { checkCollision } from "../../../../../../src/game/Collision";
-import type { MapType } from "../../../../../../src/game/Maps";
+import { checkCollision } from "../../../../../shared/collision/Collision";
+import type { MapType } from "../../../../../shared/types/MapType";
 import { characters } from "@viking/characters";
 
 export const updatePlayer = (
@@ -58,8 +58,8 @@ export const updatePlayer = (
       newY,
       selectedCharacter,
       selectedMap.obstaclesWithCollision || [],
-      ctx, // ✅ passed
-      camera // ✅ passed
+      ctx,
+      camera
     )
   ) {
     player.prevX = player.x;

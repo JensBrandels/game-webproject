@@ -1,20 +1,20 @@
-import "../styles/MapEditor.css";
+import "./style.css";
 import { useState, useEffect } from "react";
-import EditorCanvas from "../editorLogic/EditorCanvas";
-import TileSelector from "../editorLogic/TileSelector";
-import AssetBuilder from "../editorLogic/AssetBuilder";
-import { loadAssets } from "../api/assets/assetApi";
+import { EditorCanvas } from "@viking/editor-canvas";
+import { TileSelector } from "@viking/tile-selector";
+import { AssetBuilder } from "@viking/asset-builder";
+import { loadAssets } from "../../../core/api/assets/assetApi";
 import {
   saveMap,
   loadSavedMaps,
   deleteMap,
   updateMap,
-} from "../api/maps/mapApi";
+} from "../../../core/api/map/mapApi";
 
 const GRID_SIZE = 63;
 const TILE_SIZE = 32;
 
-const MapEditor = () => {
+export const MapEditor = () => {
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [mapName, setMapName] = useState("");
   const [mapId, setMapId] = useState(crypto.randomUUID());
@@ -252,5 +252,3 @@ const MapEditor = () => {
     </div>
   );
 };
-
-export default MapEditor;

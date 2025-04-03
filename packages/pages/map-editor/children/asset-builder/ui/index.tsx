@@ -1,6 +1,6 @@
 import { useState } from "react";
-import "../styles/AssetBuilder.css";
-import generateId from "../utils/GenerateId";
+import "./style.css";
+import generateId from "../../../../../../src/utils/GenerateId";
 
 const GRID_WIDTH = 6;
 const GRID_HEIGHT = 7;
@@ -19,7 +19,7 @@ interface HitboxTile {
   height: number;
 }
 
-const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
+export const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
   const [grid, setGrid] = useState<(string | null)[][]>(
     Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(null))
   );
@@ -352,5 +352,3 @@ const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
     </div>
   );
 };
-
-export default AssetBuilder;

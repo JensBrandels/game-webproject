@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { GameCanvas } from "@viking/game-canvas";
 import { characters } from "@viking/characters";
-import { getMapById } from "../../../../src/api/maps/mapApi";
-import { loadAssets } from "../../../../src/api/assets/assetApi";
+import { getMapById } from "../../../core/api/map/mapApi";
+import { loadAssets } from "../../../core/api/assets/assetApi";
 
 export const GameScreen = () => {
   const location = useLocation();

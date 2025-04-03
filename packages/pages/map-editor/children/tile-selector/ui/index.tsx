@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import "../styles/TileSelector.css";
-import generateId from "../utils/GenerateId";
+import "./style.css";
+import generateId from "../../../../../../src/utils/GenerateId";
 
 interface TileSelectorProps {
   tileSize: number;
@@ -8,7 +8,7 @@ interface TileSelectorProps {
   onTilesheetSelect?: (tilesheetId: string) => void;
 }
 
-const TileSelector = ({
+export const TileSelector = ({
   tileSize,
   onSelect,
   onTilesheetSelect,
@@ -208,5 +208,3 @@ const TileSelector = ({
     </div>
   );
 };
-
-export default TileSelector;

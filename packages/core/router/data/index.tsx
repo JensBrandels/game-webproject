@@ -4,6 +4,7 @@ import { RoutePage } from "@viking/router-page";
 import { Home } from "@viking/home-page";
 import { SelectionScreen } from "@viking/selection-screen";
 import { GameScreen } from "@viking/game-page";
+import { MapEditor } from "@viking/map-editor";
 
 const router = createBrowserRouter([
   {
@@ -13,7 +14,7 @@ const router = createBrowserRouter([
   },
   { path: "/selectionscreen", element: <SelectionScreen /> },
   { path: "/game", element: <GameScreen /> },
-  { path: "*", element: "Under construction" },
+  { path: "/mapeditor", element: <MapEditor /> },
 ]);
 
 export const AppRouter = () => {
