@@ -1,0 +1,4 @@
+{
+  "name": "@viking/home-page",
+  "main": "./index.ts"
+}

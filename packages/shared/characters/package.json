@@ -1,0 +1,4 @@
+{
+  "name": "@viking/characters",
+  "main": "./index.ts"
+}

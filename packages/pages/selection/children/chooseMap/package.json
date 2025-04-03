@@ -1,0 +1,4 @@
+{
+  "name": "@viking/map-selection",
+  "main": "./index.ts"
+}

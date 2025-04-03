@@ -1,0 +1,4 @@
+{
+  "name": "@viking/map-editor",
+  "main": "./index.ts"
+}
