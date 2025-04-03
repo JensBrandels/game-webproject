@@ -1,0 +1,5 @@
+@use "@viking/styles" as *;
+
+.home-container {
+  @include flex-center;
+}
