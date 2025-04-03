@@ -1,0 +1,4 @@
+{
+  "name": "@viking/asset-builder",
+  "main": "./index.ts"
+}

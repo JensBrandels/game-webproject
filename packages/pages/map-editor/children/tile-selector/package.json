@@ -1,0 +1,4 @@
+{
+  "name": "@viking/tile-selector",
+  "main": "./index.ts"
+}

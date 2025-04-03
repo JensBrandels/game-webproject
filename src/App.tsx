@@ -1,21 +1,26 @@
 import "./App.css";
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import CharacterSelect from "./pages/CharacterSelect";
-import GameScreen from "./pages/GameScreen";
-import MapEditor from "./pages/MapEditor";
+// import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// import Home from "./pages/Home";
+// import SelectionScreen from "./pages/SelectionScreen";
+// import GameScreen from "./pages/GameScreen";
+// import MapEditor from "./pages/MapEditor";
+
+import { AppRouter } from "@viking/router";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/character-select" element={<CharacterSelect />} />
-        <Route path="/game" element={<GameScreen />} />
-        <Route path="/mapeditor" element={<MapEditor />} />
-      </Routes>
-    </Router>
+    // <Router>
+    //   <Routes>
+    //     <Route path="/" element={<Home />} />
+    //     <Route path="/character-select" element={<SelectionScreen />} />
+    //     <Route path="/game" element={<GameScreen />} />
+    //     <Route path="/mapeditor" element={<MapEditor />} />
+    //   </Routes>
+    // </Router>
+    <div>
+      <AppRouter />
+    </div>
   );
 }
 

@@ -1,0 +1,4 @@
+{
+  "name": "@viking/game-canvas",
+  "main": "./index.ts"
+}
