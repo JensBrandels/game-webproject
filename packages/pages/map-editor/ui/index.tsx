@@ -1,4 +1,4 @@
-import "./style.css";
+import "./style.scss";
 import { useState, useEffect } from "react";
 import { EditorCanvas } from "@viking/editor-canvas";
 import { TileSelector } from "@viking/tile-selector";
@@ -133,122 +133,136 @@ export const MapEditor = () => {
   };
 
   return (
-    <div>
-      <h1>Map Editor</h1>
+    <div className="mapEditor-container">
+      <h1 className="mapEditor-title">Map Editor</h1>
 
-      {/* Loading Indicator */}
       {loading && <p>Loading maps...</p>}
 
-      {/* Map Save Form */}
-      <div style={{ marginBottom: "10px" }}>
-        <label>
-          Map Name:
-          <input
-            type="text"
-            value={mapName}
-            onChange={(e) => setMapName(e.target.value)}
-            placeholder="Enter map name"
-          />
-        </label>
-        <br />
-        <label>
-          Unique ID:
-          <input type="text" value={mapId} readOnly />
-          <button onClick={() => setMapId(crypto.randomUUID())}>
-            Generate New ID
+      {/* TOP ROW - info + asset panel */}
+      <div className="mapEditor-topRow">
+        <div className="mapEditor-infoBox">
+          <label className="mapEditor-label">
+            Map Name:
+            <input
+              className="mapEditor-input"
+              type="text"
+              value={mapName}
+              onChange={(e) => setMapName(e.target.value)}
+              placeholder="Enter map name"
+            />
+          </label>
+          <label className="mapEditor-label">
+            Unique ID:
+            <input
+              className="mapEditor-input"
+              type="text"
+              value={mapId}
+              readOnly
+            />
+            <button
+              className="mapEditor-button"
+              onClick={() => setMapId(crypto.randomUUID())}
+            >
+              Generate New ID
+            </button>
+          </label>
+
+          <div className="mapEditor-buttonBox">
+            <button className="mapEditor-button" onClick={handleSave}>
+              Save Map
+            </button>
+            <button className="mapEditor-button" onClick={handleUpdateMap}>
+              Update map
+            </button>
+          </div>
+
+          <button
+            className="mapEditor-button mapEditor-deleteButton"
+            onClick={() => handleDeleteMap(mapId)}
+          >
+            Delete Selected Map
           </button>
-        </label>
-        <br />
-        <div style={{ marginBottom: "10px" }}>
-          <button onClick={handleSave}>Save Map</button>
-          <button onClick={handleUpdateMap} style={{ marginLeft: "10px" }}>
-            Update Map
-          </button>
+
+          <label className="mapEditor-label">
+            Load Map:
+            <select
+              className="mapEditor-select"
+              onChange={(e) => handleLoadMap(e.target.value)}
+            >
+              <option value="">Select a map</option>
+              {savedMaps.map((map) => (
+                <option key={map.id} value={map.id}>
+                  {map.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="asset-selector-panel">
+          {assets.map((asset) => {
+            const allTiles = [
+              ...asset.tilesWithCollision,
+              ...asset.tilesWithoutCollision,
+            ];
+            if (allTiles.length === 0) return null;
+
+            const minX = Math.min(...allTiles.map((t) => t.x));
+            const minY = Math.min(...allTiles.map((t) => t.y));
+            const maxX = Math.max(...allTiles.map((t) => t.x));
+            const maxY = Math.max(...allTiles.map((t) => t.y));
+            const boxWidth = maxX - minX + 16;
+            const boxHeight = maxY - minY + 16;
+
+            return (
+              <div
+                key={asset.id}
+                className={`asset-preview-box ${
+                  selectedAsset === asset.id ? "selected" : ""
+                }`}
+                onClick={() =>
+                  setSelectedAsset((prev) =>
+                    prev === asset.id ? null : asset.id
+                  )
+                }
+                style={{
+                  width: `${boxWidth}px`,
+                  height: `${boxHeight}px`,
+                }}
+              >
+                {allTiles.map((tile, index) => (
+                  <img
+                    key={index}
+                    src={tile.asset}
+                    className="asset-preview-img"
+                    style={{
+                      left: `${tile.x - minX}px`,
+                      top: `${tile.y - minY}px`,
+                    }}
+                    alt=""
+                  />
+                ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Load Map Dropdown */}
-      <div style={{ marginBottom: "10px" }}>
-        <label>
-          Load Map:
-          <select onChange={(e) => handleLoadMap(e.target.value)}>
-            <option value="">Select a map</option>
-            {savedMaps.map((map) => (
-              <option key={map.id} value={map.id}>
-                {map.name}
-              </option>
-            ))}
-          </select>
-        </label>
+      {/* CANVAS SECTION */}
+      <div className="mapEditor-canvasWrapper">
+        <EditorCanvas
+          selectedAsset={selectedAsset}
+          assets={assets}
+          mapData={mapData}
+          setMapData={setMapData}
+        />
       </div>
 
-      {/* Delete Map Button */}
-      <div>
-        <button onClick={() => handleDeleteMap(mapId)}>
-          Delete Selected Map
-        </button>
+      {/* BOTTOM PANEL */}
+      <div className="mapEditor-bottomPanel">
+        <TileSelector tileSize={16} onSelect={setSelectedAsset} />
+        <AssetBuilder selectedAsset={selectedAsset} />
       </div>
-
-      {/* Editor Components */}
-      <div className="asset-selector-panel">
-        {assets.map((asset) => {
-          const allTiles = [
-            ...asset.tilesWithCollision,
-            ...asset.tilesWithoutCollision,
-          ];
-          if (allTiles.length === 0) return null;
-
-          const minX = Math.min(...allTiles.map((t) => t.x));
-          const minY = Math.min(...allTiles.map((t) => t.y));
-          const maxX = Math.max(...allTiles.map((t) => t.x));
-          const maxY = Math.max(...allTiles.map((t) => t.y));
-
-          const boxWidth = maxX - minX + 16;
-          const boxHeight = maxY - minY + 16;
-
-          return (
-            <div
-              key={asset.id}
-              className={`asset-preview-box ${
-                selectedAsset === asset.id ? "selected" : ""
-              }`}
-              onClick={() =>
-                setSelectedAsset((prev) =>
-                  prev === asset.id ? null : asset.id
-                )
-              }
-              style={{
-                width: `${boxWidth}px`,
-                height: `${boxHeight}px`,
-              }}
-            >
-              {allTiles.map((tile, index) => (
-                <img
-                  key={index}
-                  src={tile.asset}
-                  className="asset-preview-img"
-                  style={{
-                    left: `${tile.x - minX}px`,
-                    top: `${tile.y - minY}px`,
-                  }}
-                  alt=""
-                />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <EditorCanvas
-        selectedAsset={selectedAsset}
-        assets={assets}
-        mapData={mapData}
-        setMapData={setMapData}
-      />
-
-      {/* TileSelector */}
-      <TileSelector tileSize={16} onSelect={setSelectedAsset} />
-      <AssetBuilder selectedAsset={selectedAsset} />
     </div>
   );
 };
