@@ -1,20 +1,20 @@
+@use "theme" as *;
+
 @import url("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap");
 
-body {
-  font-family: "Pixelify Sans", sans-serif;
-  color: $color-text;
-  background-color: $color-bg;
-  line-height: 1.5;
-  margin: 0;
-}
+//fonts
+$pixel-font: "Pixelify Sans", sans-serif;
 
-h1,
-h2,
-h3 {
-  font-weight: 700;
-}
+//font-sizes
+$font-xs: 0.75rem;
+$font-sm: 0.875rem;
+$font-md: 1rem;
+$font-lg: 1.25rem;
+$font-xl: 1.5rem;
 
-p {
-  font-size: 1rem;
-  color: $color-text;
-}
+//title fonts
+$titleFont-xs: 1rem;
+$titleFont-sm: 1.5rem;
+$titleFont-md: 2rem;
+$titleFont-lg: 3rem;
+$titleFont-xl: 3.5rem;
