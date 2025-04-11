@@ -11,7 +11,7 @@ import {
   updateMap,
 } from "../../../core/api/map/mapApi";
 
-const GRID_SIZE = 63;
+const GRID_SIZE = 378; //12096x12096 big freaking map
 const TILE_SIZE = 32;
 
 export const MapEditor = () => {
@@ -250,12 +250,14 @@ export const MapEditor = () => {
 
       {/* CANVAS SECTION */}
       <div className="mapEditor-canvasWrapper">
-        <EditorCanvas
-          selectedAsset={selectedAsset}
-          assets={assets}
-          mapData={mapData}
-          setMapData={setMapData}
-        />
+        <div style={{ padding: "2rem" }}>
+          <EditorCanvas
+            selectedAsset={selectedAsset}
+            assets={assets}
+            mapData={mapData}
+            setMapData={setMapData}
+          />
+        </div>
       </div>
 
       {/* BOTTOM PANEL */}
