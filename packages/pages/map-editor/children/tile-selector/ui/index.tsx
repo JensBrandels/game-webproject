@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import "./style.css";
+import "./style.scss";
 import generateId from "../../../../../../src/utils/GenerateId";
 
 interface TileSelectorProps {
@@ -130,11 +130,11 @@ export const TileSelector = ({
   };
 
   return (
-    <div>
+    <div className="selector-container">
       <input type="file" accept="image/png" onChange={handleImageUpload} />
 
       <div style={{ margin: "10px 0" }}>
-        <label>Select a saved tilesheet:</label>
+        <label className="tile-label">Select a saved tilesheet:</label>
         <select
           value={selectedTilesheetId}
           onChange={(e) => handleTilesheetSelect(e.target.value)}
@@ -147,9 +147,15 @@ export const TileSelector = ({
           ))}
         </select>
       </div>
-
+      {showSaveButton && (
+        <div className="tile-save-wrapper">
+          <button className="tile-save-button" onClick={handleSaveTilesheet}>
+            💾 Save Tilesheet to Database
+          </button>
+        </div>
+      )}
       {imageSrc && (
-        <div className="tile-selector-container">
+        <div className="tileSelector-container">
           <div
             className="tile-grid"
             style={{
@@ -197,11 +203,6 @@ export const TileSelector = ({
             })}
           </div>
         </div>
-      )}
-      {showSaveButton && (
-        <button className="tile-save-button" onClick={handleSaveTilesheet}>
-          💾 Save Tilesheet to Database
-        </button>
       )}
 
       <canvas ref={canvasRef} style={{ display: "none" }} />

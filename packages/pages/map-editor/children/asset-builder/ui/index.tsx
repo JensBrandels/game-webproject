@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./style.css";
+import "./style.scss";
 import generateId from "../../../../../../src/utils/GenerateId";
 
 const GRID_WIDTH = 6;
@@ -211,7 +211,7 @@ export const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
   return (
     <div className="asset-builder-container">
       {/* Input & Controls */}
-      <div style={{ marginBottom: "10px" }}>
+      <div className="asset-builder-controls">
         <input
           type="text"
           value={assetName}
@@ -231,7 +231,7 @@ export const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
       </div>
 
       {/* Builder */}
-      <div style={{ display: "flex", gap: "20px" }}>
+      <div className="asset-builder-layout">
         <div className="asset-builder-zoom">
           <div className="asset-builder-grid">
             {grid.map((row, rowIndex) => (
@@ -253,7 +253,7 @@ export const AssetBuilder = ({ selectedAsset }: AssetBuilderProps) => {
                   );
 
                   return (
-                    <div key={colIndex} style={{ position: "relative" }}>
+                    <div key={colIndex} className="asset-builder-tile-wrapper">
                       <div
                         className={`asset-tile ${hitbox ? "hitbox-tile" : ""}`}
                         style={{

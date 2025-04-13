@@ -4,10 +4,14 @@ import { GameCanvas } from "@viking/game-canvas";
 import { characters } from "@viking/characters";
 import { getMapById } from "../../../core/api/map/mapApi";
 import { loadAssets } from "../../../core/api/assets/assetApi";
+import { useCountdown } from "../data/timer";
+
+import "./style.scss";
 
 export const GameScreen = () => {
   const location = useLocation();
   const { selectedMapId, selectedCharacterId } = location.state || {};
+  const { formatted } = useCountdown(20);
 
   const [selectedMap, setSelectedMap] = useState<any>(null);
   // const [assets, setAssets] = useState<any[]>([]);
@@ -42,9 +46,14 @@ export const GameScreen = () => {
   if (!selectedMap || !selectedCharacter) return <div>Loading...</div>;
 
   return (
-    <GameCanvas
-      selectedMap={selectedMap}
-      selectedCharacter={selectedCharacter}
-    />
+    <div className="game-ui-overlay">
+      <div className="game-timer">{formatted}</div>
+      <div>
+        <GameCanvas
+          selectedMap={selectedMap}
+          selectedCharacter={selectedCharacter}
+        />
+      </div>
+    </div>
   );
 };
