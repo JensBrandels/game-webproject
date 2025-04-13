@@ -1,0 +1,14 @@
+.game-ui-overlay {
+  display: flex;
+  flex-direction: column;
+}
+
+.game-timer {
+  font-size: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: white;
+  font-family: $pixel-font;
+  z-index: 1000;
+}
