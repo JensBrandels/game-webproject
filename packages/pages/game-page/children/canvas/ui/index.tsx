@@ -8,6 +8,8 @@ import { enemies } from "@viking/enemies";
 import { useSpawnLoop } from "../data/spawnLoop";
 import { drawEnemy } from "../data/drawEnemies";
 
+import "./style.scss";
+
 type EnemyInstance = {
   id: number;
   enemyId: number;
@@ -72,7 +74,7 @@ export const GameCanvas = ({
         direction: "down",
       });
     },
-    100
+    1000
   );
 
   useEffect(() => {
@@ -286,40 +288,19 @@ export const GameCanvas = ({
   }, [spriteSheets, selectedCharacter.id, selectedMap.id]);
 
   return (
-    <div
-      style={{
-        width: "1280px",
-        height: "720px",
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
+    <>
       <canvas
         ref={backgroundCanvasRef}
         width={1280}
         height={720}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          transform: "scale(1.5)",
-          transformOrigin: "top left",
-          imageRendering: "pixelated",
-        }}
+        className="game-canvas background"
       />
       <canvas
         ref={canvasRef}
         width={1280}
         height={720}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          transform: "scale(1.5)",
-          transformOrigin: "top left",
-          imageRendering: "pixelated",
-        }}
+        className="game-canvas foreground"
       />
-    </div>
+    </>
   );
 };
