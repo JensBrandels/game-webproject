@@ -4,6 +4,20 @@ import { updatePlayer } from "../data/updatePlayer";
 import { setupInputHandlers } from "../data/handleInput";
 import { drawPlacedObjects } from "../data/drawPlacedObjects";
 import { characters } from "@viking/characters";
+import { enemies } from "@viking/enemies";
+import { useSpawnLoop } from "../data/spawnLoop";
+import { drawEnemy } from "../data/drawEnemies";
+
+type EnemyInstance = {
+  id: number;
+  enemyId: number;
+  x: number;
+  y: number;
+  hp: number;
+  animationState: "idle" | "walk" | "death";
+  frameIndex: number;
+  direction?: "left" | "right" | "up" | "down";
+};
 
 type GameCanvasProps = {
   selectedMap: any;
@@ -17,6 +31,7 @@ export const GameCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const playerRef = useRef({
     x: 100,
     y: 100,
@@ -24,11 +39,41 @@ export const GameCanvas = ({
     prevY: 100,
     direction: "down",
   });
+
   const camera = { x: 0, y: 0 };
   const keys = useRef<Record<string, boolean>>({});
   const [spriteSheets, setSpriteSheets] = useState<
     Record<string, HTMLImageElement>
   >({});
+  const enemyInstancesRef = useRef<EnemyInstance[]>([]);
+
+  //control enemy spawn waves
+  useSpawnLoop(
+    () => playerRef.current,
+    (x, y, currentTimeSec) => {
+      let enemyToSpawn = enemies.find((e) => e.id === 1);
+      if (currentTimeSec >= 30) {
+        enemyToSpawn = enemies.find((e) => e.id === 2);
+      }
+
+      if (!enemyToSpawn) return;
+
+      console.log(
+        `Spawning enemy: ${enemyToSpawn?.name} at ${x}, ${y} (time: ${currentTimeSec}s)`
+      );
+      enemyInstancesRef.current.push({
+        id: performance.now(),
+        enemyId: enemyToSpawn.id,
+        x,
+        y,
+        hp: enemyToSpawn.hp,
+        animationState: "walk",
+        frameIndex: 0,
+        direction: "down",
+      });
+    },
+    100
+  );
 
   useEffect(() => {
     const removeInputHandlers = setupInputHandlers(keys);
@@ -38,8 +83,20 @@ export const GameCanvas = ({
     const sheetPaths = new Set<string>();
     sheetPaths.add(characterData.animations.idle.sheet);
     Object.values(characterData.animations.walk).forEach((walkAnim) =>
-      sheetPaths.add(walkAnim.sheet)
+      sheetPaths.add((walkAnim as any).sheet)
     );
+
+    enemies.forEach((e) => {
+      Object.values(e.animations).forEach((anim: any) => {
+        if ("sheet" in anim) {
+          sheetPaths.add(anim.sheet);
+        } else {
+          Object.values(anim).forEach((dirAnim: any) =>
+            sheetPaths.add(dirAnim.sheet)
+          );
+        }
+      });
+    });
 
     const images: Record<string, HTMLImageElement> = {};
     let loadedCount = 0;
@@ -66,18 +123,14 @@ export const GameCanvas = ({
     const ctx = canvas?.getContext("2d");
     const backgroundCanvas = backgroundCanvasRef.current;
     const bgCtx = backgroundCanvas?.getContext("2d");
-
     if (!canvas || !ctx || !backgroundCanvas || !bgCtx) return;
 
-    // Setup offscreen canvas
     offscreenCanvasRef.current = document.createElement("canvas");
     offscreenCanvasRef.current.width = selectedMap.size.width;
     offscreenCanvasRef.current.height = selectedMap.size.height;
-
     const offCtx = offscreenCanvasRef.current.getContext("2d");
     if (!offCtx) return;
 
-    // Draw background + collision to offscreen canvas
     selectedMap.obstaclesWithCollision = [];
     drawPlacedObjects(
       offCtx,
@@ -96,7 +149,6 @@ export const GameCanvas = ({
     let animationFrameId: number;
 
     const draw = () => {
-      // Draw visible portion of map from offscreen canvas
       bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       bgCtx.drawImage(
         offscreenCanvasRef.current!,
@@ -110,10 +162,9 @@ export const GameCanvas = ({
         backgroundCanvas.height
       );
 
-      // Clear top canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw player
+      //Draw player first (so hitbox alignment works)
       drawPlayer(
         ctx,
         playerRef.current,
@@ -122,7 +173,12 @@ export const GameCanvas = ({
         spriteSheets
       );
 
-      // Now draw zIndex=1 visual-only tiles *after* player
+      // then draw enemies (so they're behind trees, etc.)
+      enemyInstancesRef.current.forEach((enemy) => {
+        drawEnemy(ctx, enemy, camera, spriteSheets);
+      });
+
+      //Finally draw top-layer visuals like tree crowns
       drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
     };
 
@@ -137,29 +193,133 @@ export const GameCanvas = ({
         ctx
       );
 
+      const now = performance.now();
+
+      const playerData = characters.find((c) => c.id === selectedCharacter.id);
+      const hitbox = playerData?.hitbox ?? {
+        width: 16,
+        height: 16,
+        offsetX: 8,
+        offsetY: 6,
+      };
+
+      const playerCenterX =
+        playerRef.current.x + hitbox.offsetX + hitbox.width / 2;
+      const playerCenterY =
+        playerRef.current.y + hitbox.offsetY + hitbox.height / 2;
+
+      const enemiesList = enemyInstancesRef.current;
+
+      //1. Repel enemies from each other BEFORE movement
+      for (let i = 0; i < enemiesList.length; i++) {
+        const a = enemiesList[i];
+        for (let j = i + 1; j < enemiesList.length; j++) {
+          const b = enemiesList[j];
+          if (a.id === b.id) continue;
+
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const dist = Math.hypot(dx, dy);
+          const minDist = 24;
+
+          if (dist < minDist && dist > 0) {
+            const push = (minDist - dist) / 2;
+            const pushX = (dx / dist) * push;
+            const pushY = (dy / dist) * push;
+
+            a.x += pushX;
+            a.y += pushY;
+            b.x -= pushX;
+            b.y -= pushY;
+          }
+        }
+      }
+
+      //2. Move each enemy toward player AFTER separation
+      enemiesList.forEach((enemy) => {
+        const enemyData = enemies.find((e) => e.id === enemy.enemyId);
+        if (!enemyData) return;
+
+        const enemyCenterX =
+          enemy.x + enemyData.hitbox.offsetX + enemyData.hitbox.width / 2;
+        const enemyCenterY =
+          enemy.y + enemyData.hitbox.offsetY + enemyData.hitbox.height / 2;
+
+        const dx = playerCenterX - enemyCenterX;
+        const dy = playerCenterY - enemyCenterY;
+        const distance = Math.hypot(dx, dy);
+
+        let direction: "left" | "right" | "up" | "down" = "down";
+        if (Math.abs(dx) > Math.abs(dy)) {
+          direction = dx < 0 ? "left" : "right";
+        } else {
+          direction = dy < 0 ? "up" : "down";
+        }
+
+        if (!(enemy as any).lastFrameTime) {
+          (enemy as any).lastFrameTime = now;
+        }
+
+        if (now - (enemy as any).lastFrameTime > 150) {
+          enemy.frameIndex += 1;
+          (enemy as any).lastFrameTime = now;
+        }
+
+        enemy.direction = direction;
+
+        const minDistance = (hitbox.width + enemyData.hitbox.width) / 2;
+        if (distance > minDistance) {
+          const angle = Math.atan2(dy, dx);
+          const speed = enemyData.movementSpeed;
+
+          enemy.x += Math.cos(angle) * speed;
+          enemy.y += Math.sin(angle) * speed;
+        }
+      });
+
       draw();
       animationFrameId = requestAnimationFrame(gameLoop);
     };
 
     animationFrameId = requestAnimationFrame(gameLoop);
-
     return () => cancelAnimationFrame(animationFrameId);
   }, [spriteSheets, selectedCharacter.id, selectedMap.id]);
 
   return (
-    <>
+    <div
+      style={{
+        width: "1280px",
+        height: "720px",
+        overflow: "hidden",
+        position: "relative",
+      }}
+    >
       <canvas
         ref={backgroundCanvasRef}
         width={1280}
         height={720}
-        style={{ position: "absolute", top: 0, left: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          transform: "scale(1.5)",
+          transformOrigin: "top left",
+          imageRendering: "pixelated",
+        }}
       />
       <canvas
         ref={canvasRef}
         width={1280}
         height={720}
-        style={{ position: "absolute", top: 0, left: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          transform: "scale(1.5)",
+          transformOrigin: "top left",
+          imageRendering: "pixelated",
+        }}
       />
-    </>
+    </div>
   );
 };

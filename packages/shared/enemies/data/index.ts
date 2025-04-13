@@ -28,10 +28,10 @@ export type Enemy = {
   hp: number;
   damage: number;
   movementSpeed: number;
+  spriteSize: { width: number; height: number };
   animations: {
     idle: Animation;
     walk: Partial<DirectionalAnimation> | Animation;
-    hurt?: Animation;
     death: Animation;
   };
 };
@@ -43,28 +43,25 @@ export const enemies: Enemy[] = [
     hitbox: {
       width: 16,
       height: 16,
-      offsetX: 0,
-      offsetY: 0,
+      offsetX: 20,
+      offsetY: 20,
     },
     hp: 50,
     damage: 10,
-    movementSpeed: 1.5,
+    movementSpeed: 0.2,
+    spriteSize: { width: 64, height: 64 },
     animations: {
       idle: {
         sheet: "/GreenSlimeIdle.png",
-        frames: [...Array(6)].map((_, i) => ({ x: i * 32, y: 0 })),
+        frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 64 })),
       },
       walk: {
         sheet: "/GreenSlimeWalk.png",
-        frames: [...Array(6)].map((_, i) => ({ x: i * 32, y: 0 })),
-      },
-      hurt: {
-        sheet: "/GreenSlimeHurt.png",
-        frames: [...Array(4)].map((_, i) => ({ x: i * 32, y: 0 })),
+        frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 64 })),
       },
       death: {
         sheet: "/GreenSlimeDeath.png",
-        frames: [...Array(6)].map((_, i) => ({ x: i * 32, y: 0 })),
+        frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 64 })),
       },
     },
   },
@@ -72,33 +69,41 @@ export const enemies: Enemy[] = [
     id: 2,
     name: "Blue Blob",
     hitbox: {
-      width: 32,
-      height: 32,
-      offsetX: 0,
-      offsetY: 0,
+      width: 16,
+      height: 16,
+      offsetX: 20,
+      offsetY: 20,
     },
     hp: 100,
     damage: 20,
-    movementSpeed: 1,
+    movementSpeed: 0.5,
+    spriteSize: { width: 32, height: 32 },
     animations: {
       idle: {
         sheet: "/BlueSlimeIdle.png",
-        frames: [...Array(6)].map((_, i) => ({ x: i * 64, y: 0 })),
+        frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 32 })),
       },
       walk: {
         left: {
           sheet: "/BlueSlimeLeft.png",
-          frames: [...Array(6)].map((_, i) => ({ x: i * 64, y: 0 })),
+          frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 32 })),
         },
         right: {
           sheet: "/BlueSlimeRight.png",
-          frames: [...Array(6)].map((_, i) => ({ x: i * 64, y: 0 })),
+          frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 32 })),
+        },
+        up: {
+          sheet: "/BlueSlimeUp.png",
+          frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 32 })),
+        },
+        down: {
+          sheet: "/BlueSlimeDown.png",
+          frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 32 })),
         },
       },
-      hurt: null as any,
       death: {
         sheet: "/BlueSlimeDeath.png",
-        frames: [...Array(6)].map((_, i) => ({ x: i * 64, y: 0 })),
+        frames: [...Array(6)].map((_, i) => ({ x: 0, y: i * 32 })),
       },
     },
   },
