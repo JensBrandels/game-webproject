@@ -11,8 +11,9 @@
 
 ## 🔥 Phase 1: Core Gameplay Loop
 
-- [ ] Enemy spawning system
-- [ ] Basic enemy AI (chasing)
+- [x] Gameloop timer for maps
+- [x] Enemy spawning system (based on timer)
+- [x] Basic enemy AI (chasing)
 - [ ] Combat system (player attack + enemy damage)
 - [ ] XP gain per kill
 - [ ] Level-up choices (temporary map upgrades)
