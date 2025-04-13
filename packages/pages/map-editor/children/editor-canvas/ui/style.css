@@ -14,16 +14,10 @@
   background-size: 16px 16px;
 }
 
-.editor-grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: grid;
-  grid-template-columns: repeat(63, 32px);
-  grid-template-rows: repeat(63, 32px);
-  width: 2000px;
-  height: 2000px;
-  pointer-events: none;
+.canvas-inner {
+  padding: 2rem;
+  width: fit-content;
+  height: fit-content;
 }
 
 .grid-cell {

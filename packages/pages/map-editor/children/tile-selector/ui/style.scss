@@ -1,0 +1,66 @@
+@use "@viking/styles" as *;
+
+.selector-container {
+  background: $color-muted;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.tileSelector-container {
+  margin-top: $spacing-sm;
+  border: 1px solid #ccc;
+  display: inline-block;
+  background: $color-muted;
+  padding: $spacing-xs;
+  border-radius: 8px;
+  color: white;
+  @include pixel-font;
+}
+
+.tile-grid {
+  display: grid;
+  position: relative;
+  grid-template-columns: repeat(auto-fill, minmax(16px, 1fr));
+  gap: 0;
+  width: max-content;
+  height: max-content;
+}
+
+.tile {
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  @include pixel-font;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  &.selected-tile {
+    outline: 2px solid #4caf50;
+    border-radius: 2px;
+  }
+}
+
+.tile-save-button {
+  margin-top: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-weight: bold;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  @include pixel-font;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.tile-save-wrapper {
+  margin-top: $spacing-sm;
+}
+
+.tile-label {
+  @include pixel-font;
+}

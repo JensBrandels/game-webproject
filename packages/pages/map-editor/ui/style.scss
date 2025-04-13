@@ -1,0 +1,114 @@
+@use "@viking/styles" as *;
+
+.mapEditor-container {
+  min-height: 100vh;
+  background-color: $color-bg;
+
+  .mapEditor-title {
+    text-align: center;
+    font-size: $titleFont-md;
+    margin-bottom: 2rem;
+    @include pixel-font;
+  }
+
+  .mapEditor-topRow {
+    @include flex-row(center, flex-start, 2rem);
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+
+    .mapEditor-infoBox {
+      background: $color-muted;
+      padding: 1.5rem;
+      border-radius: 8px;
+      color: white;
+      min-width: 300px;
+      max-width: 300px;
+      @include pixel-font;
+      @include form-column-layout;
+
+      .mapEditor-label {
+        @include label-style;
+      }
+
+      .mapEditor-input {
+        @include input-style;
+      }
+
+      .mapEditor-button {
+        @include button-style;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid white;
+        white-space: nowrap;
+      }
+
+      .mapEditor-buttonBox {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .mapEditor-deleteButton {
+        margin-top: -5px;
+      }
+
+      .mapEditor-loadmap {
+        margin-top: 1rem;
+      }
+
+      .mapEditor-select {
+        margin-top: 0.5rem;
+        width: 100%;
+      }
+    }
+
+    .asset-selector-panel {
+      background: $color-muted;
+      padding: 1rem;
+      border-radius: 8px;
+      max-height: 600px;
+      overflow-y: auto;
+      width: 1000px;
+
+      .asset-preview-box {
+        position: relative;
+        background: #222;
+        image-rendering: pixelated;
+        cursor: pointer;
+        display: inline-block;
+        margin: 5px;
+
+        &.selected {
+          border: 2px solid lime;
+        }
+
+        .asset-preview-img {
+          position: absolute;
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
+  }
+
+  .mapEditor-canvasWrapper {
+    max-height: 100vh;
+    overflow: auto;
+    border: 1px solid #555;
+    margin: 0 2rem 2rem;
+  }
+
+  .mapEditor-bottomPanel {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 400px;
+    width: 50%;
+    gap: 2rem;
+    margin-left: 2rem;
+
+    > * {
+      flex: 1;
+    }
+  }
+}

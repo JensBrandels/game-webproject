@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, FC } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./style.css";
+import type { FC } from "react";
 
 const TILE_SIZE = 16;
 
@@ -309,16 +310,18 @@ export const EditorCanvas: FC<EditorCanvasProps> = ({
         </label>
       </div>
 
-      <canvas
-        ref={canvasRef}
-        width={mapData.size.width}
-        height={mapData.size.height}
-        className="editor-canvas"
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
-        onContextMenu={handleRightClick}
-      />
+      <div className="canvas-inner">
+        <canvas
+          ref={canvasRef}
+          width={mapData.size.width + 1}
+          height={mapData.size.height + 1}
+          className="editor-canvas"
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onContextMenu={handleRightClick}
+        />
+      </div>
 
       {selectedObject && (
         <div
