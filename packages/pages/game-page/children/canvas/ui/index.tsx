@@ -7,6 +7,7 @@ import { characters } from "@viking/characters";
 import { enemies } from "@viking/enemies";
 import { useSpawnLoop } from "../data/spawnLoop";
 import { drawEnemy } from "../data/drawEnemies";
+import { LoadingScreen } from "@viking/loading";
 
 import "./style.scss";
 
@@ -33,6 +34,7 @@ export const GameCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const collisionObstaclesRef = useRef<any[]>([]);
 
   const playerRef = useRef({
     x: 100,
@@ -49,7 +51,10 @@ export const GameCanvas = ({
   >({});
   const enemyInstancesRef = useRef<EnemyInstance[]>([]);
 
-  //control enemy spawn waves
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState("Loading assets...");
+  const [progress, setProgress] = useState(0);
+
   useSpawnLoop(
     () => playerRef.current,
     (x, y, currentTimeSec) => {
@@ -57,12 +62,7 @@ export const GameCanvas = ({
       if (currentTimeSec >= 30) {
         enemyToSpawn = enemies.find((e) => e.id === 2);
       }
-
       if (!enemyToSpawn) return;
-
-      console.log(
-        `Spawning enemy: ${enemyToSpawn?.name} at ${x}, ${y} (time: ${currentTimeSec}s)`
-      );
       enemyInstancesRef.current.push({
         id: performance.now(),
         enemyId: enemyToSpawn.id,
@@ -119,7 +119,82 @@ export const GameCanvas = ({
   }, [selectedCharacter.id]);
 
   useEffect(() => {
-    if (Object.keys(spriteSheets).length === 0) return;
+    if (!selectedMap || !selectedCharacter) return;
+
+    const loadAll = async () => {
+      const characterData = characters.find(
+        (c) => c.id === selectedCharacter.id
+      );
+      if (!characterData) return;
+
+      const sheetPaths = new Set<string>();
+      sheetPaths.add(characterData.animations.idle.sheet);
+      Object.values(characterData.animations.walk).forEach((walkAnim) =>
+        sheetPaths.add((walkAnim as any).sheet)
+      );
+
+      enemies.forEach((e) => {
+        Object.values(e.animations).forEach((anim: any) => {
+          if ("sheet" in anim) {
+            sheetPaths.add(anim.sheet);
+          } else {
+            Object.values(anim).forEach((dirAnim: any) =>
+              sheetPaths.add(dirAnim.sheet)
+            );
+          }
+        });
+      });
+
+      const images: Record<string, HTMLImageElement> = {};
+      let loadedCount = 0;
+
+      setCurrentStep("Loading sprite sheets...");
+      for (const path of sheetPaths) {
+        await new Promise<void>((resolve) => {
+          const img = new Image();
+          img.src = path;
+          img.onload = () => {
+            images[path.replace(/^\/+/, "")] = img;
+            loadedCount++;
+            setProgress(Math.floor((loadedCount / sheetPaths.size) * 40));
+            resolve();
+          };
+        });
+      }
+      setSpriteSheets(images);
+
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = selectedMap.size.width;
+      offCanvas.height = selectedMap.size.height;
+      const offCtx = offCanvas.getContext("2d");
+      if (!offCtx) return;
+
+      setCurrentStep("Drawing background...");
+      setProgress(80);
+      await drawPlacedObjects(
+        offCtx,
+        selectedMap.placedObjects,
+        { x: 0, y: 0 },
+        "background"
+      );
+
+      offscreenCanvasRef.current = offCanvas;
+
+      setProgress(90);
+      setCurrentStep("Finalizing...");
+      await new Promise((r) => setTimeout(r, 600));
+      setProgress(100);
+      setCurrentStep("Ready!");
+      await new Promise((r) => setTimeout(r, 600));
+
+      setIsLoading(false);
+    };
+
+    loadAll();
+  }, [selectedCharacter.id, selectedMap.id]);
+
+  useEffect(() => {
+    if (isLoading) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
@@ -127,30 +202,10 @@ export const GameCanvas = ({
     const bgCtx = backgroundCanvas?.getContext("2d");
     if (!canvas || !ctx || !backgroundCanvas || !bgCtx) return;
 
-    offscreenCanvasRef.current = document.createElement("canvas");
-    offscreenCanvasRef.current.width = selectedMap.size.width;
-    offscreenCanvasRef.current.height = selectedMap.size.height;
-    const offCtx = offscreenCanvasRef.current.getContext("2d");
-    if (!offCtx) return;
-
-    selectedMap.obstaclesWithCollision = [];
-    drawPlacedObjects(
-      offCtx,
-      selectedMap.placedObjects,
-      { x: 0, y: 0 },
-      "background"
-    );
-    drawPlacedObjects(
-      offCtx,
-      selectedMap.placedObjects,
-      { x: 0, y: 0 },
-      "collision",
-      selectedMap.obstaclesWithCollision
-    );
-
+    const removeInputHandlers = setupInputHandlers(keys);
     let animationFrameId: number;
 
-    const draw = () => {
+    const draw = async () => {
       bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       bgCtx.drawImage(
         offscreenCanvasRef.current!,
@@ -166,7 +221,25 @@ export const GameCanvas = ({
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      //Draw player first (so hitbox alignment works)
+      // Draw collision tiles visually
+      await drawPlacedObjects(
+        ctx,
+        selectedMap.placedObjects,
+        camera,
+        "collision"
+      );
+
+      // Then collect hitboxes
+      collisionObstaclesRef.current = [];
+      await drawPlacedObjects(
+        ctx,
+        selectedMap.placedObjects,
+        camera,
+        "collision",
+        collisionObstaclesRef.current
+      );
+
+      // Draw player
       drawPlayer(
         ctx,
         playerRef.current,
@@ -175,28 +248,30 @@ export const GameCanvas = ({
         spriteSheets
       );
 
-      // then draw enemies (so they're behind trees, etc.)
+      // Draw enemies
       enemyInstancesRef.current.forEach((enemy) => {
         drawEnemy(ctx, enemy, camera, spriteSheets);
       });
 
-      //Finally draw top-layer visuals like tree crowns
-      drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
+      // Visuals on top (e.g., tree crowns)
+      await drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
     };
 
-    const gameLoop = () => {
+    const gameLoop = async () => {
       updatePlayer(
         playerRef.current,
         keys,
         selectedCharacter.id,
-        selectedMap,
+        {
+          ...selectedMap,
+          obstaclesWithCollision: collisionObstaclesRef.current,
+        },
         camera,
         canvas,
-        ctx
+        ctx!
       );
 
       const now = performance.now();
-
       const playerData = characters.find((c) => c.id === selectedCharacter.id);
       const hitbox = playerData?.hitbox ?? {
         width: 16,
@@ -212,23 +287,19 @@ export const GameCanvas = ({
 
       const enemiesList = enemyInstancesRef.current;
 
-      //1. Repel enemies from each other BEFORE movement
+      // Repel enemies from each other
       for (let i = 0; i < enemiesList.length; i++) {
         const a = enemiesList[i];
         for (let j = i + 1; j < enemiesList.length; j++) {
           const b = enemiesList[j];
-          if (a.id === b.id) continue;
-
           const dx = a.x - b.x;
           const dy = a.y - b.y;
           const dist = Math.hypot(dx, dy);
           const minDist = 24;
-
           if (dist < minDist && dist > 0) {
             const push = (minDist - dist) / 2;
             const pushX = (dx / dist) * push;
             const pushY = (dy / dist) * push;
-
             a.x += pushX;
             a.y += pushY;
             b.x -= pushX;
@@ -237,7 +308,7 @@ export const GameCanvas = ({
         }
       }
 
-      //2. Move each enemy toward player AFTER separation
+      // Move enemies toward player
       enemiesList.forEach((enemy) => {
         const enemyData = enemies.find((e) => e.id === enemy.enemyId);
         if (!enemyData) return;
@@ -273,21 +344,25 @@ export const GameCanvas = ({
         if (distance > minDistance) {
           const angle = Math.atan2(dy, dx);
           const speed = enemyData.movementSpeed;
-
           enemy.x += Math.cos(angle) * speed;
           enemy.y += Math.sin(angle) * speed;
         }
       });
 
-      draw();
+      await draw();
       animationFrameId = requestAnimationFrame(gameLoop);
     };
 
     animationFrameId = requestAnimationFrame(gameLoop);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [spriteSheets, selectedCharacter.id, selectedMap.id]);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      removeInputHandlers();
+    };
+  }, [isLoading]);
 
-  return (
+  return isLoading ? (
+    <LoadingScreen currentStep={currentStep} progress={progress} />
+  ) : (
     <>
       <canvas
         ref={backgroundCanvasRef}

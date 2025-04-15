@@ -1,0 +1,4 @@
+{
+  "name": "@viking/game-store",
+  "main": "./index.ts"
+}
