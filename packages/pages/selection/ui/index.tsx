@@ -1,36 +1,33 @@
 import "./style.css";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-// Importing the characters
 import { characters } from "@viking/characters";
-// importing the maps
 import { MapComponent } from "@viking/map-selection";
+import { useAccountStore } from "@viking/game-store";
 
 export const SelectionScreen = () => {
-  const [selectedCharacter, setSelectedCharacter] = useState<number | null>(
-    null
+  const navigate = useNavigate();
+
+  const selectedCharacterId = useAccountStore(
+    (s) => s.account?.selectedCharacterId
   );
-  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+  const selectedMapId = useAccountStore((s) => s.selectedMapId);
+  const selectCharacter = useAccountStore((s) => s.selectCharacter);
+  const setSelectedMapId = useAccountStore((s) => s.setSelectedMapId);
 
   const handleSelectMap = (mapId: string) => {
+    console.log(mapId);
     setSelectedMapId(mapId);
   };
 
   const handleCharacterClick = (characterId: number) => {
-    setSelectedCharacter(characterId);
+    console.log(characterId);
+    selectCharacter(characterId);
   };
 
-  const navigate = useNavigate();
-  // console.log(selectedCharacter);
-
   const handleStartGame = () => {
-    navigate("/game", {
-      state: {
-        selectedMapId,
-        selectedCharacterId: selectedCharacter,
-      },
-    });
+    if (selectedCharacterId && selectedMapId) {
+      navigate("/game");
+    }
   };
 
   return (
@@ -41,7 +38,7 @@ export const SelectionScreen = () => {
           <div
             key={character.id}
             className={`character-selection-box ${
-              selectedCharacter === character.id ? "selected" : ""
+              selectedCharacterId === character.id ? "selected" : ""
             }`}
             onClick={() => handleCharacterClick(character.id)}
           >
@@ -68,12 +65,14 @@ export const SelectionScreen = () => {
           </div>
         ))}
       </div>
+
       <div>
         <MapComponent
           onSelectMap={handleSelectMap}
-          selectedMapId={selectedMapId} // Pass selectedMapId here
+          selectedMapId={selectedMapId}
         />
       </div>
+
       <div className="character-selection-startgame">
         <button onClick={handleStartGame}>Start Game</button>
       </div>

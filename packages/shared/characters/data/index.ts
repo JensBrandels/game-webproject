@@ -19,6 +19,7 @@ export type Character = {
     offsetY: number;
   };
   hp: number;
+  maxHp: number;
   mp: number;
   movementSpeed: number;
   attackSpeed: number;
@@ -47,6 +48,7 @@ export const characters: Character[] = [
       offsetY: 6,
     },
     hp: 120,
+    maxHp: 120,
     mp: 0,
     movementSpeed: 2,
     attackSpeed: 1.2,

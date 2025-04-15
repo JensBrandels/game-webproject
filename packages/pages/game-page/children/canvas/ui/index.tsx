@@ -3,11 +3,12 @@ import { drawPlayer } from "../data/drawPlayer";
 import { updatePlayer } from "../data/updatePlayer";
 import { setupInputHandlers } from "../data/handleInput";
 import { drawPlacedObjects } from "../data/drawPlacedObjects";
-import { characters } from "@viking/characters";
+// import { characters } from "@viking/characters";
 import { enemies } from "@viking/enemies";
 import { useSpawnLoop } from "../data/spawnLoop";
 import { drawEnemy } from "../data/drawEnemies";
 import { LoadingScreen } from "@viking/loading";
+import { useAccountStore } from "@viking/game-store";
 
 import "./style.scss";
 
@@ -22,15 +23,10 @@ type EnemyInstance = {
   direction?: "left" | "right" | "up" | "down";
 };
 
-type GameCanvasProps = {
-  selectedMap: any;
-  selectedCharacter: any;
-};
+export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
+  const selectedCharacter = useAccountStore.getState().selectedCharacter();
+  if (!selectedCharacter) return null;
 
-export const GameCanvas = ({
-  selectedMap,
-  selectedCharacter,
-}: GameCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -79,8 +75,7 @@ export const GameCanvas = ({
 
   useEffect(() => {
     const removeInputHandlers = setupInputHandlers(keys);
-    const characterData = characters.find((c) => c.id === selectedCharacter.id);
-    if (!characterData) return;
+    const characterData = selectedCharacter;
 
     const sheetPaths = new Set<string>();
     sheetPaths.add(characterData.animations.idle.sheet);
@@ -122,10 +117,9 @@ export const GameCanvas = ({
     if (!selectedMap || !selectedCharacter) return;
 
     const loadAll = async () => {
-      const characterData = characters.find(
-        (c) => c.id === selectedCharacter.id
-      );
-      if (!characterData) return;
+      const characterData = selectedCharacter;
+
+      console.log("Map loaded:", selectedMap);
 
       const sheetPaths = new Set<string>();
       sheetPaths.add(characterData.animations.idle.sheet);
@@ -272,7 +266,7 @@ export const GameCanvas = ({
       );
 
       const now = performance.now();
-      const playerData = characters.find((c) => c.id === selectedCharacter.id);
+      const playerData = selectedCharacter;
       const hitbox = playerData?.hitbox ?? {
         width: 16,
         height: 16,
