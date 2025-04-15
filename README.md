@@ -14,6 +14,7 @@
 - [x] Gameloop timer for maps
 - [x] Enemy spawning system (based on timer)
 - [x] Basic enemy AI (chasing)
+- [ ] Weapon system
 - [ ] Combat system (player attack + enemy damage)
 - [ ] XP gain per kill
 - [ ] Level-up choices (temporary map upgrades)
@@ -35,8 +36,7 @@
 
 - [ ] Account XP system (separate from map XP)
 - [ ] Passive skill tree UI
-- [ ] Apply passive buffs per account level
-- [ ] Weapon system (acquire + level during map)
+- [ ] Apply passive buffs per account level1
 - [ ] Item inventory (gear, stats, bonuses)
 
 ---
