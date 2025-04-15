@@ -1,16 +1,21 @@
 const loadedImages: Record<string, HTMLImageElement> = {};
 
-const loadImage = (src: string): HTMLImageElement => {
-  if (loadedImages[src]) return loadedImages[src];
-  const img = new Image();
-  img.src = src;
-  loadedImages[src] = img;
-  return img;
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  if (loadedImages[src]) {
+    return Promise.resolve(loadedImages[src]);
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      loadedImages[src] = img;
+      resolve(img);
+    };
+  });
 };
 
-let hasLogged = false;
-
-export const drawPlacedObjects = (
+export const drawPlacedObjects = async (
   ctx: CanvasRenderingContext2D,
   placedObjects: any[],
   camera: { x: number; y: number },
@@ -19,28 +24,17 @@ export const drawPlacedObjects = (
 ) => {
   const zIndex = 1;
 
-  placedObjects.forEach((obj: any) => {
+  for (const obj of placedObjects) {
     const { x, y, assetData } = obj;
-    if (!assetData) return;
-
-    // Log only once
-    if (!hasLogged && stage === "background") {
-      hasLogged = true;
-      console.log("PLACED OBJECT:", { x, y });
-      console.log(
-        "TILES:",
-        assetData.tilesWithCollision,
-        assetData.tilesWithoutCollision
-      );
-      console.log("HITBOXES:", assetData.hitbox);
-    }
+    if (!assetData) continue;
 
     if (obj.zIndex === 0 && stage === "background") {
-      [
+      const tiles = [
         ...assetData.tilesWithCollision,
         ...assetData.tilesWithoutCollision,
-      ].forEach((tile: any) => {
-        const img = loadImage(tile.asset);
+      ];
+      for (const tile of tiles) {
+        const img = await loadImage(tile.asset);
         ctx.drawImage(
           img,
           x + tile.x - camera.x,
@@ -48,21 +42,25 @@ export const drawPlacedObjects = (
           16,
           16
         );
-      });
+      }
     }
 
     if (obj.zIndex === zIndex && stage === "collision") {
-      assetData.tilesWithCollision.forEach((tile: any) => {
-        const img = loadImage(tile.asset);
-        ctx.drawImage(
-          img,
-          x + tile.x - camera.x,
-          y + tile.y - camera.y,
-          16,
-          16
-        );
-      });
+      // Only draw visuals when not collecting hitboxes
+      if (!collisionCollector) {
+        for (const tile of assetData.tilesWithCollision) {
+          const img = await loadImage(tile.asset);
+          ctx.drawImage(
+            img,
+            x + tile.x - camera.x,
+            y + tile.y - camera.y,
+            16,
+            16
+          );
+        }
+      }
 
+      // Collect hitboxes if provided
       if (collisionCollector) {
         assetData.hitbox.forEach((hit: any) => {
           const hitboxX = x + hit.x;
@@ -75,18 +73,15 @@ export const drawPlacedObjects = (
             y: hitboxY,
             width,
             height,
-            hitbox: { width, height, offsetX: 0, offsetY: 0 }, // <- important!
+            hitbox: { width, height, offsetX: 0, offsetY: 0 },
           });
-
-          // ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-          // ctx.fillRect(hitboxX - camera.x, hitboxY - camera.y, width, height);
         });
       }
     }
 
     if (obj.zIndex === zIndex && stage === "visual") {
-      assetData.tilesWithoutCollision.forEach((tile: any) => {
-        const img = loadImage(tile.asset);
+      for (const tile of assetData.tilesWithoutCollision) {
+        const img = await loadImage(tile.asset);
         ctx.drawImage(
           img,
           x + tile.x - camera.x,
@@ -94,7 +89,7 @@ export const drawPlacedObjects = (
           16,
           16
         );
-      });
+      }
     }
-  });
+  }
 };
