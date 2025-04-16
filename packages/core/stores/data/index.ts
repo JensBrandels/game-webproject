@@ -11,7 +11,7 @@ type Account = {
   id: string;
   email: string;
   username: string;
-  characterIds: number[];
+  characters: Character[];
   selectedCharacterId: number | null;
   progress: {
     completedMaps: string[];
@@ -29,13 +29,17 @@ type Account = {
 type AccountStore = {
   account: Account | null;
   selectedMapId: string | null;
+  isHurt: boolean;
+  isDead: boolean;
+
+  setIsHurt: (value: boolean) => void;
+  setIsDead: (value: boolean) => void;
 
   setAccount: (data: Account) => void;
   selectCharacter: (id: number) => void;
   setSelectedMapId: (id: string) => void;
   resetAccount: () => void;
 
-  // Derived values
   selectedCharacter: () => Character | null;
   accountLevel: () => number;
   isLoggedIn: () => boolean;
@@ -47,8 +51,8 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
     id: "dev",
     email: "dev@dev.com",
     username: "DevUser",
-    characterIds: [1],
-    selectedCharacterId: null,
+    characters: [characters.find((c) => c.id === 1)!],
+    selectedCharacterId: 1,
     progress: {
       completedMaps: [],
       accountLevel: 1,
@@ -61,7 +65,14 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
       deaths: 0,
     },
   },
+
   selectedMapId: null,
+
+  isHurt: false,
+  isDead: false,
+
+  setIsHurt: (value) => set({ isHurt: value }),
+  setIsDead: (value) => set({ isDead: value }),
 
   setAccount: (data) => set({ account: data }),
 
@@ -77,14 +88,17 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
         : {}
     ),
 
-  setSelectedMapId: (id) => set({ selectedMapId: id }),
+  setSelectedMapId: (id: string) => set({ selectedMapId: id }),
 
   resetAccount: () => set({ account: null, selectedMapId: null }),
 
   selectedCharacter: () => {
-    const id = get().account?.selectedCharacterId;
-    if (!id) return null;
-    return characters.find((c) => c.id === id) || null;
+    const account = get().account;
+    if (!account?.selectedCharacterId) return null;
+    return (
+      account.characters.find((c) => c.id === account.selectedCharacterId) ||
+      null
+    );
   },
 
   accountLevel: () => get().account?.progress.accountLevel ?? 0,

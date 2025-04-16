@@ -3,12 +3,12 @@ import { drawPlayer } from "../data/drawPlayer";
 import { updatePlayer } from "../data/updatePlayer";
 import { setupInputHandlers } from "../data/handleInput";
 import { drawPlacedObjects } from "../data/drawPlacedObjects";
-// import { characters } from "@viking/characters";
 import { enemies } from "@viking/enemies";
 import { useSpawnLoop } from "../data/spawnLoop";
 import { drawEnemy } from "../data/drawEnemies";
 import { LoadingScreen } from "@viking/loading";
 import { useAccountStore } from "@viking/game-store";
+import { handleDamage } from "../data/handleDamage";
 
 import "./style.scss";
 
@@ -25,6 +25,8 @@ type EnemyInstance = {
 
 export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
   const selectedCharacter = useAccountStore.getState().selectedCharacter();
+  const isDeadRef = useRef(false);
+  const isHurtRef = useRef(false);
   if (!selectedCharacter) return null;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -82,6 +84,12 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     Object.values(characterData.animations.walk).forEach((walkAnim) =>
       sheetPaths.add((walkAnim as any).sheet)
     );
+    if (characterData.animations.hurt?.sheet) {
+      sheetPaths.add(characterData.animations.hurt.sheet);
+    }
+    if (characterData.animations.death?.sheet) {
+      sheetPaths.add(characterData.animations.death.sheet);
+    }
 
     enemies.forEach((e) => {
       Object.values(e.animations).forEach((anim: any) => {
@@ -102,7 +110,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
       const img = new Image();
       img.src = path;
       img.onload = () => {
-        images[path.replace(/^\/+/, "")] = img;
+        images[path.replace(/^\/+/g, "")] = img;
         loadedCount++;
         if (loadedCount === sheetPaths.size) {
           setSpriteSheets(images);
@@ -119,13 +127,17 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     const loadAll = async () => {
       const characterData = selectedCharacter;
 
-      console.log("Map loaded:", selectedMap);
-
       const sheetPaths = new Set<string>();
       sheetPaths.add(characterData.animations.idle.sheet);
       Object.values(characterData.animations.walk).forEach((walkAnim) =>
         sheetPaths.add((walkAnim as any).sheet)
       );
+      if (characterData.animations.hurt?.sheet) {
+        sheetPaths.add(characterData.animations.hurt.sheet);
+      }
+      if (characterData.animations.death?.sheet) {
+        sheetPaths.add(characterData.animations.death.sheet);
+      }
 
       enemies.forEach((e) => {
         Object.values(e.animations).forEach((anim: any) => {
@@ -148,7 +160,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
           const img = new Image();
           img.src = path;
           img.onload = () => {
-            images[path.replace(/^\/+/, "")] = img;
+            images[path.replace(/^\/+/g, "")] = img;
             loadedCount++;
             setProgress(Math.floor((loadedCount / sheetPaths.size) * 40));
             resolve();
@@ -215,15 +227,12 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw collision tiles visually
       await drawPlacedObjects(
         ctx,
         selectedMap.placedObjects,
         camera,
         "collision"
       );
-
-      // Then collect hitboxes
       collisionObstaclesRef.current = [];
       await drawPlacedObjects(
         ctx,
@@ -233,115 +242,122 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
         collisionObstaclesRef.current
       );
 
-      // Draw player
       drawPlayer(
         ctx,
         playerRef.current,
         camera,
         selectedCharacter.id,
-        spriteSheets
+        spriteSheets,
+        isHurtRef.current,
+        isDeadRef.current
       );
 
-      // Draw enemies
       enemyInstancesRef.current.forEach((enemy) => {
         drawEnemy(ctx, enemy, camera, spriteSheets);
       });
 
-      // Visuals on top (e.g., tree crowns)
       await drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
     };
 
     const gameLoop = async () => {
-      updatePlayer(
-        playerRef.current,
-        keys,
-        selectedCharacter.id,
-        {
-          ...selectedMap,
-          obstaclesWithCollision: collisionObstaclesRef.current,
-        },
-        camera,
-        canvas,
-        ctx!
-      );
+      isHurtRef.current = useAccountStore.getState().isHurt;
+      isDeadRef.current = useAccountStore.getState().isDead;
 
-      const now = performance.now();
-      const playerData = selectedCharacter;
-      const hitbox = playerData?.hitbox ?? {
-        width: 16,
-        height: 16,
-        offsetX: 8,
-        offsetY: 6,
-      };
+      if (!isDeadRef.current) {
+        updatePlayer(
+          playerRef.current,
+          keys,
+          selectedCharacter.id,
+          {
+            ...selectedMap,
+            obstaclesWithCollision: collisionObstaclesRef.current,
+          },
+          camera,
+          canvas,
+          ctx!
+        );
 
-      const playerCenterX =
-        playerRef.current.x + hitbox.offsetX + hitbox.width / 2;
-      const playerCenterY =
-        playerRef.current.y + hitbox.offsetY + hitbox.height / 2;
+        const playerData = selectedCharacter;
+        const hitbox = playerData?.hitbox ?? {
+          width: 16,
+          height: 16,
+          offsetX: 8,
+          offsetY: 6,
+        };
 
-      const enemiesList = enemyInstancesRef.current;
+        const playerCenterX =
+          playerRef.current.x + hitbox.offsetX + hitbox.width / 2;
+        const playerCenterY =
+          playerRef.current.y + hitbox.offsetY + hitbox.height / 2;
 
-      // Repel enemies from each other
-      for (let i = 0; i < enemiesList.length; i++) {
-        const a = enemiesList[i];
-        for (let j = i + 1; j < enemiesList.length; j++) {
-          const b = enemiesList[j];
-          const dx = a.x - b.x;
-          const dy = a.y - b.y;
-          const dist = Math.hypot(dx, dy);
-          const minDist = 24;
-          if (dist < minDist && dist > 0) {
-            const push = (minDist - dist) / 2;
-            const pushX = (dx / dist) * push;
-            const pushY = (dy / dist) * push;
-            a.x += pushX;
-            a.y += pushY;
-            b.x -= pushX;
-            b.y -= pushY;
+        const enemiesList = enemyInstancesRef.current;
+
+        for (let i = 0; i < enemiesList.length; i++) {
+          const a = enemiesList[i];
+          for (let j = i + 1; j < enemiesList.length; j++) {
+            const b = enemiesList[j];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = 24;
+            if (dist < minDist && dist > 0) {
+              const push = (minDist - dist) / 2;
+              const pushX = (dx / dist) * push;
+              const pushY = (dy / dist) * push;
+              a.x += pushX;
+              a.y += pushY;
+              b.x -= pushX;
+              b.y -= pushY;
+            }
           }
         }
+
+        enemiesList.forEach((enemy) => {
+          const enemyData = enemies.find((e) => e.id === enemy.enemyId);
+          if (!enemyData) return;
+
+          const enemyCenterX =
+            enemy.x + enemyData.hitbox.offsetX + enemyData.hitbox.width / 2;
+          const enemyCenterY =
+            enemy.y + enemyData.hitbox.offsetY + enemyData.hitbox.height / 2;
+
+          const dx = playerCenterX - enemyCenterX;
+          const dy = playerCenterY - enemyCenterY;
+          const distance = Math.hypot(dx, dy);
+
+          let direction: "left" | "right" | "up" | "down" = "down";
+          if (Math.abs(dx) > Math.abs(dy)) {
+            direction = dx < 0 ? "left" : "right";
+          } else {
+            direction = dy < 0 ? "up" : "down";
+          }
+
+          if (!(enemy as any).lastFrameTime) {
+            (enemy as any).lastFrameTime = performance.now();
+          }
+
+          if (performance.now() - (enemy as any).lastFrameTime > 150) {
+            enemy.frameIndex += 1;
+            (enemy as any).lastFrameTime = performance.now();
+          }
+
+          enemy.direction = direction;
+
+          const minDistance = (hitbox.width + enemyData.hitbox.width) / 2;
+          if (distance > minDistance) {
+            const angle = Math.atan2(dy, dx);
+            const speed = enemyData.movementSpeed;
+            enemy.x += Math.cos(angle) * speed;
+            enemy.y += Math.sin(angle) * speed;
+          }
+        });
+
+        handleDamage(
+          enemyInstancesRef.current,
+          playerRef.current.x,
+          playerRef.current.y
+        );
       }
-
-      // Move enemies toward player
-      enemiesList.forEach((enemy) => {
-        const enemyData = enemies.find((e) => e.id === enemy.enemyId);
-        if (!enemyData) return;
-
-        const enemyCenterX =
-          enemy.x + enemyData.hitbox.offsetX + enemyData.hitbox.width / 2;
-        const enemyCenterY =
-          enemy.y + enemyData.hitbox.offsetY + enemyData.hitbox.height / 2;
-
-        const dx = playerCenterX - enemyCenterX;
-        const dy = playerCenterY - enemyCenterY;
-        const distance = Math.hypot(dx, dy);
-
-        let direction: "left" | "right" | "up" | "down" = "down";
-        if (Math.abs(dx) > Math.abs(dy)) {
-          direction = dx < 0 ? "left" : "right";
-        } else {
-          direction = dy < 0 ? "up" : "down";
-        }
-
-        if (!(enemy as any).lastFrameTime) {
-          (enemy as any).lastFrameTime = now;
-        }
-
-        if (now - (enemy as any).lastFrameTime > 150) {
-          enemy.frameIndex += 1;
-          (enemy as any).lastFrameTime = now;
-        }
-
-        enemy.direction = direction;
-
-        const minDistance = (hitbox.width + enemyData.hitbox.width) / 2;
-        if (distance > minDistance) {
-          const angle = Math.atan2(dy, dx);
-          const speed = enemyData.movementSpeed;
-          enemy.x += Math.cos(angle) * speed;
-          enemy.y += Math.sin(angle) * speed;
-        }
-      });
 
       await draw();
       animationFrameId = requestAnimationFrame(gameLoop);

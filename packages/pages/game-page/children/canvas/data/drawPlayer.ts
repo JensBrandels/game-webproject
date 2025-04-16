@@ -1,4 +1,4 @@
-import { characters } from "@viking/characters";
+import { useAccountStore } from "@viking/game-store";
 
 const animationState = new Map<
   number,
@@ -21,29 +21,93 @@ export const drawPlayer = (
   },
   camera: { x: number; y: number },
   selectedCharacterId: number,
-  spriteSheets: Record<string, HTMLImageElement>
+  spriteSheets: Record<string, HTMLImageElement>,
+  isHurt: boolean,
+  isDead: boolean
 ) => {
-  const character = characters.find((c) => c.id === selectedCharacterId);
+  const character = useAccountStore.getState().selectedCharacter();
   if (!character) return;
 
   const direction = player.direction || "down";
   const isMoving = player.x !== player.prevX || player.y !== player.prevY;
   const dir = direction as keyof typeof character.animations.walk;
 
+  // 💀 DEATH animation
+  if (isDead && character.animations.death) {
+    const deathAnim = character.animations.death;
+    const image = spriteSheets[deathAnim.sheet.replace(/^\/+/g, "")];
+    if (!image || deathAnim.frames.length === 0) return;
+
+    const deathFrameSpeed = 30;
+
+    if (!animationState.has(character.id)) {
+      animationState.set(character.id, {
+        frameIndex: 0,
+        frameTimer: 0,
+        lastAnimKey: "death",
+      });
+    }
+
+    const state = animationState.get(character.id)!;
+
+    state.frameTimer++;
+    if (state.frameTimer >= deathFrameSpeed) {
+      if (state.frameIndex < deathAnim.frames.length - 1) {
+        state.frameIndex++;
+      }
+      state.frameTimer = 0;
+    }
+
+    const frame = deathAnim.frames[state.frameIndex];
+
+    ctx.drawImage(
+      image,
+      frame.x,
+      frame.y,
+      32,
+      32,
+      player.x - camera.x - 16,
+      player.y - camera.y - 16,
+      32,
+      32
+    );
+    return;
+  }
+
+  // 🐷 HURT animation
+  if (isHurt && character.animations.hurt) {
+    const hurtAnim = character.animations.hurt;
+    const image = spriteSheets[hurtAnim.sheet.replace(/^\/+/g, "")];
+    if (!image || hurtAnim.frames.length === 0) return;
+
+    const frame = hurtAnim.frames[0];
+
+    ctx.drawImage(
+      image,
+      frame.x,
+      frame.y,
+      32,
+      32,
+      player.x - camera.x - 16,
+      player.y - camera.y - 16,
+      32,
+      32
+    );
+
+    drawHpBar(ctx, character.hp, character.maxHp ?? 120, player, camera);
+    return;
+  }
+
+  // 🧍 NORMAL idle / walk animation
   const animData = isMoving
     ? character.animations.walk?.[dir] || character.animations.idle
     : character.animations.idle;
 
-  if (!animData?.frames || animData.frames.length === 0) {
-    console.warn("Missing animation frames for direction:", dir);
-    return;
-  }
+  if (!animData?.frames || animData.frames.length === 0) return;
 
-  const image = spriteSheets[animData.sheet.replace(/^\/+/, "")];
-  if (!image) {
-    console.warn("Missing image for:", animData.sheet);
-    return;
-  }
+  const animKey = animData.sheet + "|" + direction;
+  const image = spriteSheets[animData.sheet.replace(/^\/+/g, "")];
+  if (!image) return;
 
   if (!animationState.has(selectedCharacterId)) {
     animationState.set(selectedCharacterId, {
@@ -54,7 +118,6 @@ export const drawPlayer = (
   }
 
   const state = animationState.get(selectedCharacterId)!;
-  const animKey = animData.sheet + "|" + direction;
 
   if (state.lastAnimKey !== animKey) {
     state.frameIndex = 0;
@@ -68,12 +131,7 @@ export const drawPlayer = (
     state.frameTimer = 0;
   }
 
-  if (state.frameIndex >= animData.frames.length) {
-    state.frameIndex = 0;
-  }
-
   const frame = animData.frames[state.frameIndex];
-  // const flipX = (animData as any).shouldFlipX;
 
   ctx.drawImage(
     image,
@@ -86,4 +144,27 @@ export const drawPlayer = (
     32,
     32
   );
+
+  drawHpBar(ctx, character.hp, character.maxHp ?? 120, player, camera);
 };
+
+// === ❤️ Draw HP bar above player ===
+function drawHpBar(
+  ctx: CanvasRenderingContext2D,
+  hp: number,
+  maxHp: number,
+  player: { x: number; y: number },
+  camera: { x: number; y: number }
+) {
+  const barWidth = 32;
+  const barHeight = 5;
+  const hpPercent = Math.max(0, Math.min(1, hp / maxHp));
+  const x = player.x - camera.x - barWidth / 2;
+  const y = player.y - camera.y - 26;
+
+  ctx.fillStyle = "black";
+  ctx.fillRect(x, y, barWidth, barHeight);
+
+  ctx.fillStyle = "red";
+  ctx.fillRect(x + 1, y + 1, (barWidth - 2) * hpPercent, barHeight - 2);
+}

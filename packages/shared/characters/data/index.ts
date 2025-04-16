@@ -80,22 +80,12 @@ export const characters: Character[] = [
         },
       },
       hurt: {
-        sheet: "/Soldier-Hurt.png",
-        frames: [
-          { x: 5, y: 34 },
-          { x: 38, y: 34 },
-          { x: 71, y: 34 },
-          { x: 104, y: 34 },
-        ],
+        sheet: "/Pig.png",
+        frames: Array.from({ length: 1 }, (_, i) => ({ x: 0, y: i * 32 })),
       },
       death: {
-        sheet: "/Soldier-Death.png",
-        frames: [
-          { x: 5, y: 34 },
-          { x: 38, y: 34 },
-          { x: 71, y: 34 },
-          { x: 104, y: 34 },
-        ],
+        sheet: "/PlayerDeath.png",
+        frames: Array.from({ length: 4 }, (_, i) => ({ x: 0, y: i * 32 })),
       },
     },
   },
