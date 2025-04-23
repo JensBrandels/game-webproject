@@ -12,16 +12,20 @@ export function handleDamage(
     y: number;
   }[],
   playerX: number,
-  playerY: number
+  playerY: number,
+  isDead: boolean
 ) {
-  const { selectedCharacter, setAccount, account, setIsHurt, setIsDead } =
-    useAccountStore.getState();
+  const get = useAccountStore.getState();
+  const selectedCharacter = get.selectedCharacter;
+  const setAccount = get.setAccount;
+  const account = get.account;
+  const setIsHurt = get.setIsHurt;
+  const setIsDead = get.setIsDead;
 
   const character = selectedCharacter();
-  if (!character || !account) return;
+  if (!character || !account || isDead) return;
 
   const hitbox = character.hitbox;
-
   const playerBox = {
     x: playerX + hitbox.offsetX,
     y: playerY + hitbox.offsetY,
@@ -58,18 +62,11 @@ export function handleDamage(
     }
   }
 
-  if (overlapping) {
-    setIsHurt(true);
-  } else {
-    setIsHurt(false);
-  }
+  setIsHurt(overlapping);
 
   if (damageTaken > 0) {
     const newHp = Math.max(character.hp - damageTaken, 0);
-    const updatedCharacter = {
-      ...character,
-      hp: newHp,
-    };
+    const updatedCharacter = { ...character, hp: newHp };
 
     const updatedAccount = {
       ...account,

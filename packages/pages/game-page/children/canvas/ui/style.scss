@@ -9,6 +9,19 @@
   transform: scale(1.82);
 }
 
+.game-timer {
+  position: absolute;
+  top: 0px;
+  left: 50%;
+  z-index: 10000;
+  color: white;
+  font-size: 24px;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
 // For smaller screens, reduce the scale
 @media (max-width: 1920px), (max-height: 1080px) {
   .game-canvas {

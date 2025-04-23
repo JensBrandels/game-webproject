@@ -24,19 +24,19 @@ export const drawPlayer = (
   spriteSheets: Record<string, HTMLImageElement>,
   isHurt: boolean,
   isDead: boolean
-) => {
+): boolean => {
   const character = useAccountStore.getState().selectedCharacter();
-  if (!character) return;
+  if (!character) return false;
 
   const direction = player.direction || "down";
   const isMoving = player.x !== player.prevX || player.y !== player.prevY;
   const dir = direction as keyof typeof character.animations.walk;
 
   // 💀 DEATH animation
-  if (isDead && character.animations.death) {
+  if ((isDead || character.hp <= 0) && character.animations.death) {
     const deathAnim = character.animations.death;
     const image = spriteSheets[deathAnim.sheet.replace(/^\/+/g, "")];
-    if (!image || deathAnim.frames.length === 0) return;
+    if (!image || deathAnim.frames.length === 0) return false;
 
     const deathFrameSpeed = 30;
 
@@ -71,14 +71,15 @@ export const drawPlayer = (
       32,
       32
     );
-    return;
+
+    return state.frameIndex === deathAnim.frames.length - 1;
   }
 
   // 🐷 HURT animation
   if (isHurt && character.animations.hurt) {
     const hurtAnim = character.animations.hurt;
     const image = spriteSheets[hurtAnim.sheet.replace(/^\/+/g, "")];
-    if (!image || hurtAnim.frames.length === 0) return;
+    if (!image || hurtAnim.frames.length === 0) return false;
 
     const frame = hurtAnim.frames[0];
 
@@ -95,7 +96,7 @@ export const drawPlayer = (
     );
 
     drawHpBar(ctx, character.hp, character.maxHp ?? 120, player, camera);
-    return;
+    return false;
   }
 
   // 🧍 NORMAL idle / walk animation
@@ -103,11 +104,11 @@ export const drawPlayer = (
     ? character.animations.walk?.[dir] || character.animations.idle
     : character.animations.idle;
 
-  if (!animData?.frames || animData.frames.length === 0) return;
+  if (!animData?.frames || animData.frames.length === 0) return false;
 
   const animKey = animData.sheet + "|" + direction;
   const image = spriteSheets[animData.sheet.replace(/^\/+/g, "")];
-  if (!image) return;
+  if (!image) return false;
 
   if (!animationState.has(selectedCharacterId)) {
     animationState.set(selectedCharacterId, {
@@ -146,6 +147,8 @@ export const drawPlayer = (
   );
 
   drawHpBar(ctx, character.hp, character.maxHp ?? 120, player, camera);
+
+  return false;
 };
 
 // === ❤️ Draw HP bar above player ===

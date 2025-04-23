@@ -9,6 +9,9 @@ import { drawEnemy } from "../data/drawEnemies";
 import { LoadingScreen } from "@viking/loading";
 import { useAccountStore } from "@viking/game-store";
 import { handleDamage } from "../data/handleDamage";
+import { DeathScreen } from "@viking/death-screen";
+
+import { useLocation } from "react-router-dom";
 
 import "./style.scss";
 
@@ -24,16 +27,16 @@ type EnemyInstance = {
 };
 
 export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
-  const selectedCharacter = useAccountStore.getState().selectedCharacter();
-  const isDeadRef = useRef(false);
+  const selectedCharacter = useAccountStore((s) => s.selectedCharacter());
+  const isDead = useAccountStore((s) => s.isDead);
   const isHurtRef = useRef(false);
+  const [showDeathScreen, setShowDeathScreen] = useState(false);
   if (!selectedCharacter) return null;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const collisionObstaclesRef = useRef<any[]>([]);
-
   const playerRef = useRef({
     x: 100,
     y: 100,
@@ -41,7 +44,6 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     prevY: 100,
     direction: "down",
   });
-
   const camera = { x: 0, y: 0 };
   const keys = useRef<Record<string, boolean>>({});
   const [spriteSheets, setSpriteSheets] = useState<
@@ -53,14 +55,44 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
   const [currentStep, setCurrentStep] = useState("Loading assets...");
   const [progress, setProgress] = useState(0);
 
+  const [secondsElapsed, setSecondsElapsed] = useState<number>(0);
+  const totalSeconds = 20 * 60;
+
+  const location = useLocation();
+
+  // TIMER EFFECT
+  useEffect(() => {
+    setSecondsElapsed(0); //reset timer
+    setShowDeathScreen(false); //reset deathscreen
+
+    const interval = setInterval(() => {
+      const character = useAccountStore.getState().selectedCharacter();
+      if (!character || character.hp <= 0) return;
+
+      setSecondsElapsed((prev) => {
+        if (prev >= totalSeconds) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [location.pathname]);
+
   useSpawnLoop(
     () => playerRef.current,
     (x, y, currentTimeSec) => {
+      const character = useAccountStore.getState().selectedCharacter();
+      if (!character || character.hp <= 0) return;
+
       let enemyToSpawn = enemies.find((e) => e.id === 1);
       if (currentTimeSec >= 30) {
         enemyToSpawn = enemies.find((e) => e.id === 2);
       }
       if (!enemyToSpawn) return;
+
       enemyInstancesRef.current.push({
         id: performance.now(),
         enemyId: enemyToSpawn.id,
@@ -242,15 +274,19 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
         collisionObstaclesRef.current
       );
 
-      drawPlayer(
+      const finished = drawPlayer(
         ctx,
         playerRef.current,
         camera,
         selectedCharacter.id,
         spriteSheets,
         isHurtRef.current,
-        isDeadRef.current
+        isDead
       );
+
+      if (selectedCharacter && selectedCharacter.hp <= 0 && finished) {
+        setShowDeathScreen(true);
+      }
 
       enemyInstancesRef.current.forEach((enemy) => {
         drawEnemy(ctx, enemy, camera, spriteSheets);
@@ -261,9 +297,8 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
 
     const gameLoop = async () => {
       isHurtRef.current = useAccountStore.getState().isHurt;
-      isDeadRef.current = useAccountStore.getState().isDead;
 
-      if (!isDeadRef.current) {
+      if (!useAccountStore.getState().isDead) {
         updatePlayer(
           playerRef.current,
           keys,
@@ -355,7 +390,8 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
         handleDamage(
           enemyInstancesRef.current,
           playerRef.current.x,
-          playerRef.current.y
+          playerRef.current.y,
+          false
         );
       }
 
@@ -368,12 +404,18 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
       cancelAnimationFrame(animationFrameId);
       removeInputHandlers();
     };
-  }, [isLoading]);
+  }, [isLoading, isDead]);
+
+  const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, "0");
+  const seconds = String(secondsElapsed % 60).padStart(2, "0");
 
   return isLoading ? (
     <LoadingScreen currentStep={currentStep} progress={progress} />
   ) : (
     <>
+      <div className="game-timer">
+        {minutes}:{seconds}
+      </div>
       <canvas
         ref={backgroundCanvasRef}
         width={1280}
@@ -386,6 +428,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
         height={720}
         className="game-canvas foreground"
       />
+      {showDeathScreen && <DeathScreen />}
     </>
   );
 };
