@@ -47,7 +47,7 @@ export const enemies: Enemy[] = [
       offsetY: 20,
     },
     hp: 50,
-    damage: 10,
+    damage: 50,
     movementSpeed: 0.2,
     spriteSize: { width: 64, height: 64 },
     animations: {
@@ -75,7 +75,7 @@ export const enemies: Enemy[] = [
       offsetY: 20,
     },
     hp: 100,
-    damage: 20,
+    damage: 2,
     movementSpeed: 0.5,
     spriteSize: { width: 32, height: 32 },
     animations: {
