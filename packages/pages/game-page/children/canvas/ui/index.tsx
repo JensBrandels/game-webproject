@@ -28,8 +28,15 @@ type EnemyInstance = {
 
 export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
   const selectedCharacter = useAccountStore((s) => s.selectedCharacter());
+  useEffect(() => {
+    console.log(
+      "🧍 Selected Character on mount:",
+      useAccountStore.getState().selectedCharacter()
+    );
+  }, []);
   const isDead = useAccountStore((s) => s.isDead);
   const isHurtRef = useRef(false);
+  const isPlayingHurt = useRef(false);
   const [showDeathScreen, setShowDeathScreen] = useState(false);
   if (!selectedCharacter) return null;
 
@@ -244,6 +251,8 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     let animationFrameId: number;
 
     const draw = async () => {
+      const character = useAccountStore.getState().selectedCharacter();
+
       bgCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
       bgCtx.drawImage(
         offscreenCanvasRef.current!,
@@ -274,17 +283,20 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
         collisionObstaclesRef.current
       );
 
+      if (!character) return;
+
       const finished = drawPlayer(
         ctx,
         playerRef.current,
         camera,
-        selectedCharacter.id,
+        character.id,
         spriteSheets,
         isHurtRef.current,
-        isDead
+        isDead,
+        isPlayingHurt
       );
 
-      if (selectedCharacter && selectedCharacter.hp <= 0 && finished) {
+      if (character && character.hp <= 0 && finished) {
         setShowDeathScreen(true);
       }
 
@@ -296,13 +308,16 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     };
 
     const gameLoop = async () => {
+      const character = useAccountStore.getState().selectedCharacter();
+      if (!character || !playerRef.current?.x || !playerRef.current?.y) return;
+
       isHurtRef.current = useAccountStore.getState().isHurt;
 
       if (!useAccountStore.getState().isDead) {
         updatePlayer(
           playerRef.current,
           keys,
-          selectedCharacter.id,
+          character.id,
           {
             ...selectedMap,
             obstaclesWithCollision: collisionObstaclesRef.current,
@@ -312,8 +327,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
           ctx!
         );
 
-        const playerData = selectedCharacter;
-        const hitbox = playerData?.hitbox ?? {
+        const hitbox = character.hitbox ?? {
           width: 16,
           height: 16,
           offsetX: 8,

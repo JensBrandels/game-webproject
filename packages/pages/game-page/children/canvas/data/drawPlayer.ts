@@ -23,8 +23,13 @@ export const drawPlayer = (
   selectedCharacterId: number,
   spriteSheets: Record<string, HTMLImageElement>,
   isHurt: boolean,
-  isDead: boolean
+  isDead: boolean,
+  isPlayingHurt: { current: boolean }
 ): boolean => {
+  if (!player || typeof player.x !== "number" || typeof player.y !== "number") {
+    return false;
+  }
+
   const character = useAccountStore.getState().selectedCharacter();
   if (!character) return false;
 
@@ -76,10 +81,18 @@ export const drawPlayer = (
   }
 
   // 🐷 HURT animation
-  if (isHurt && character.animations.hurt) {
+  if (
+    isHurt &&
+    !isDead &&
+    character.animations.hurt &&
+    character.animations.hurt.frames &&
+    character.animations.hurt.frames.length > 0
+  ) {
+    isPlayingHurt.current = true;
+
     const hurtAnim = character.animations.hurt;
     const image = spriteSheets[hurtAnim.sheet.replace(/^\/+/g, "")];
-    if (!image || hurtAnim.frames.length === 0) return false;
+    if (!image) return false;
 
     const frame = hurtAnim.frames[0];
 
@@ -96,6 +109,11 @@ export const drawPlayer = (
     );
 
     drawHpBar(ctx, character.hp, character.maxHp ?? 120, player, camera);
+
+    requestAnimationFrame(() => {
+      isPlayingHurt.current = false;
+    });
+
     return false;
   }
 

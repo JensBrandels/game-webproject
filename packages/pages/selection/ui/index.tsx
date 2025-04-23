@@ -26,6 +26,8 @@ export const SelectionScreen = () => {
 
   const handleStartGame = () => {
     if (selectedCharacterId && selectedMapId) {
+      const store = useAccountStore.getState();
+      console.log("NEW GAMESTART — full store state:", store);
       navigate("/game");
     }
   };

@@ -1,32 +1,20 @@
 import { useNavigate } from "react-router-dom";
-import { useAccountStore } from "@viking/game-store";
+import { restartGame } from "../../../../../shared/restart/restart";
 
 import "./style.scss";
+
 export const DeathScreen = () => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    const store = useAccountStore.getState();
-    const account = store.account;
-    const selected = store.selectedCharacter();
-
-    if (account && selected) {
-      const updatedChar = {
-        ...selected,
-        hp: selected.maxHp,
-      };
-
-      store.setAccount({
-        ...account,
-        characters: account.characters.map((c) =>
-          c.id === updatedChar.id ? updatedChar : c
-        ),
-      });
-      store.setIsDead(false);
-      store.setIsHurt(false);
+    try {
+      restartGame();
+      setTimeout(() => {
+        navigate("/selectionscreen");
+      }, 0);
+    } catch (err) {
+      console.error("DeathScreen navigation failed:", err);
     }
-
-    navigate("/selectionscreen");
   };
 
   return (
