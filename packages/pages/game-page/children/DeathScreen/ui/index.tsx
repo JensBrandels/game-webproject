@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { restartGame } from "../../../../../shared/restart/restart";
+import {
+  restartGame,
+  validateResetState,
+} from "../../../../../shared/restart/restart";
 
 import "./style.scss";
 
@@ -9,9 +12,10 @@ export const DeathScreen = () => {
   const handleBack = () => {
     try {
       restartGame();
+      validateResetState();
       setTimeout(() => {
         navigate("/selectionscreen");
-      }, 0);
+      }, 50);
     } catch (err) {
       console.error("DeathScreen navigation failed:", err);
     }

@@ -1,6 +1,7 @@
 import { useAccountStore } from "@viking/game-store";
 import { enemies } from "@viking/enemies";
 import { isBoxOverlap } from "../../../../../shared/collision/Collision";
+import { isResetting } from "../../../../../shared/restart/restart";
 
 const lastHitTimestamps: Map<number, number> = new Map();
 
@@ -21,6 +22,8 @@ export function handleDamage(
   const account = get.account;
   const setIsHurt = get.setIsHurt;
   const setIsDead = get.setIsDead;
+
+  if (isResetting) return;
 
   const character = selectedCharacter();
   if (!character || !account || isDead) return;

@@ -24,10 +24,11 @@ export const SelectionScreen = () => {
     selectCharacter(characterId);
   };
 
+  const account = useAccountStore((s) => s.account);
+
   const handleStartGame = () => {
-    if (selectedCharacterId && selectedMapId) {
-      const store = useAccountStore.getState();
-      console.log("NEW GAMESTART — full store state:", store);
+    if (selectedCharacterId && selectedMapId && account) {
+      console.log("NEW GAMESTART — full store state:", account);
       navigate("/game");
     }
   };

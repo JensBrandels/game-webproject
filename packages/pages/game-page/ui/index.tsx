@@ -11,7 +11,7 @@ export const GameScreen = () => {
   const selectedMapId = useAccountStore((s) => s.selectedMapId);
   const { formatted } = useCountdown(20);
 
-  const selectedCharacter = useAccountStore.getState().selectedCharacter();
+  const selectedCharacter = useAccountStore((s) => s.selectedCharacter());
   const [selectedMap, setSelectedMap] = useState<any>(null);
 
   useEffect(() => {
