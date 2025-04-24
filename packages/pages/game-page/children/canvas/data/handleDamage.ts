@@ -1,7 +1,10 @@
 import { useAccountStore } from "@viking/game-store";
 import { enemies } from "@viking/enemies";
 import { isBoxOverlap } from "../../../../../shared/collision/Collision";
-import { isResetting } from "../../../../../shared/restart/restart";
+import {
+  isResetting,
+  lastResetTime,
+} from "../../../../../shared/restart/restart";
 
 const lastHitTimestamps: Map<number, number> = new Map();
 
@@ -22,6 +25,10 @@ export function handleDamage(
   const account = get.account;
   const setIsHurt = get.setIsHurt;
   const setIsDead = get.setIsDead;
+  const resetDamage = Date.now();
+
+  // Check both isResetting flag and invulnerability period
+  if (isResetting || resetDamage - lastResetTime < 1000) return;
 
   if (isResetting) return;
 

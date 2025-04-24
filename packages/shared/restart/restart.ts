@@ -1,15 +1,19 @@
 import { useAccountStore } from "@viking/game-store";
+import { animationState } from "@viking/game-canvas/data/drawPlayer";
 
 export let isResetting = false;
+export let lastResetTime = 0;
 
 export function restartGame() {
   isResetting = true;
-
+  lastResetTime = Date.now();
   const store = useAccountStore.getState();
   const account = store.account;
   const selected = store.selectedCharacter();
 
   if (!account || !selected) return;
+
+  animationState.clear();
 
   const updatedCharacters = account.characters.map((c) =>
     c.id === selected.id
