@@ -11,12 +11,12 @@ import { DeathScreen } from "@viking/death-screen";
 import { loadSpriteSheets } from "../data/loadSpriteSheets";
 import { loadBackground } from "../data/loadBackground";
 import { useGameTimer } from "../data/useGameTimer";
+import { useSelectedCharacter } from "../../../../../shared/hooks/useSelectedCharacter";
 
 import "./style.scss";
 
 export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
-  const selectedCharacter = useAccountStore((s) => s.selectedCharacter());
-  const isDead = useAccountStore((s) => s.isDead);
+  const selectedCharacter = useSelectedCharacter();
   const isHurtRef = useRef(false);
   const isPlayingHurt = useRef(false);
   const [showDeathScreen, setShowDeathScreen] = useState(false);
@@ -116,7 +116,6 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     const cleanup = startGameLoop({
       playerRef,
       keys,
-      selectedCharacter,
       selectedMap,
       camera,
       canvas,
@@ -125,7 +124,6 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
       spriteSheets,
       isHurtRef,
       isPlayingHurt,
-      isDead,
       offscreenCanvas: offscreenCanvasRef.current!,
       collisionObstaclesRef,
       enemyInstancesRef,
@@ -136,7 +134,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
       cleanup();
       removeInput();
     };
-  }, [isLoading, isDead]);
+  }, [isLoading]);
 
   const minutes = String(Math.floor(secondsElapsed / 60)).padStart(2, "0");
   const seconds = String(secondsElapsed % 60).padStart(2, "0");

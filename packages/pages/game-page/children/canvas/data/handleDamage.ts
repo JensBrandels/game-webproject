@@ -1,71 +1,62 @@
 import { useAccountStore } from "@viking/game-store";
 import { enemies } from "@viking/enemies";
 import { isBoxOverlap } from "../../../../../shared/collision/Collision";
-import {
-  isResetting,
-  lastResetTime,
-} from "../../../../../shared/restart/restart";
+import { lastResetTime } from "../../../../../shared/restart/restart";
 
-const lastHitTimestamps: Map<number, number> = new Map();
+export const lastHitTimestamps: Map<number, number> = new Map();
+
+export function clearHitTimestamps() {
+  lastHitTimestamps.clear();
+}
 
 export function handleDamage(
-  enemyInstances: {
-    id: number;
-    enemyId: number;
-    x: number;
-    y: number;
-  }[],
+  enemyInstances: { id: number; enemyId: number; x: number; y: number }[],
   playerX: number,
   playerY: number,
   isDead: boolean
 ) {
-  const get = useAccountStore.getState();
-  const selectedCharacter = get.selectedCharacter;
-  const setAccount = get.setAccount;
-  const account = get.account;
-  const setIsHurt = get.setIsHurt;
-  const setIsDead = get.setIsDead;
-  const resetDamage = Date.now();
+  if (Date.now() - lastResetTime < 500) return;
 
-  // Check both isResetting flag and invulnerability period
-  if (isResetting || resetDamage - lastResetTime < 1000) return;
+  //pull everything you need from the store in one go
+  const { account, setAccount, setIsHurt, setIsDead } =
+    useAccountStore.getState();
 
-  if (isResetting) return;
+  if (!account || isDead) return;
 
-  const character = selectedCharacter();
-  if (!character || !account || isDead) return;
+  //find the character fresh by id
+  const charId = account.selectedCharacterId;
+  const character = account.characters.find((c) => c.id === charId);
+  if (!character) return;
 
-  const hitbox = character.hitbox;
+  //build player hitbox
+  const { offsetX, offsetY, width, height } = character.hitbox;
   const playerBox = {
-    x: playerX + hitbox.offsetX,
-    y: playerY + hitbox.offsetY,
-    width: hitbox.width,
-    height: hitbox.height,
+    x: playerX + offsetX,
+    y: playerY + offsetY,
+    width,
+    height,
   };
 
-  const now = Date.now();
   let damageTaken = 0;
   let overlapping = false;
+  const now = Date.now();
 
   for (const enemy of enemyInstances) {
     const enemyData = enemies.find((e) => e.id === enemy.enemyId);
     if (!enemyData) continue;
 
-    const enemyHitbox = enemyData.hitbox;
+    const eh = enemyData.hitbox;
     const enemyBox = {
-      x: enemy.x + enemyHitbox.offsetX,
-      y: enemy.y + enemyHitbox.offsetY,
-      width: enemyHitbox.width,
-      height: enemyHitbox.height,
+      x: enemy.x + eh.offsetX,
+      y: enemy.y + eh.offsetY,
+      width: eh.width,
+      height: eh.height,
     };
 
-    const overlap = isBoxOverlap(playerBox, enemyBox);
-    const lastHit = lastHitTimestamps.get(enemy.id) || 0;
-
-    if (overlap) {
+    if (isBoxOverlap(playerBox, enemyBox)) {
       overlapping = true;
-
-      if (now - lastHit > 1000) {
+      const last = lastHitTimestamps.get(enemy.id) || 0;
+      if (now - last > 1000) {
         lastHitTimestamps.set(enemy.id, now);
         damageTaken += enemyData.damage;
       }
@@ -76,16 +67,11 @@ export function handleDamage(
 
   if (damageTaken > 0) {
     const newHp = Math.max(character.hp - damageTaken, 0);
-    const updatedCharacter = { ...character, hp: newHp };
+    const updatedCharacters = account.characters.map((c) =>
+      c.id === character.id ? { ...c, hp: newHp } : c
+    );
 
-    const updatedAccount = {
-      ...account,
-      characters: account.characters.map((c) =>
-        c.id === character.id ? updatedCharacter : c
-      ),
-    };
-
-    setAccount(updatedAccount);
+    setAccount({ ...account, characters: updatedCharacters });
 
     if (newHp <= 0) {
       console.log("Character died.");

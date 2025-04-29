@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { checkCollision } from "../../../../../shared/collision/Collision";
 import type { MapType } from "../../../../../shared/types/MapType";
-import { characters } from "@viking/characters";
+import { useAccountStore } from "@viking/game-store";
 
 export const updatePlayer = (
   player: {
@@ -18,9 +18,10 @@ export const updatePlayer = (
   canvas: HTMLCanvasElement,
   ctx?: CanvasRenderingContext2D
 ) => {
-  const selectedCharacter = characters.find(
+  const account = useAccountStore.getState().account!;
+  const selectedCharacter = account.characters.find(
     (c) => c.id === selectedCharacterId
-  );
+  )!;
   if (!selectedCharacter) return;
 
   const playerSize = 32;

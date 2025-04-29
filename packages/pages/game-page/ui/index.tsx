@@ -4,14 +4,18 @@ import { GameCanvas } from "@viking/game-canvas";
 import { getMapById } from "../../../core/api/map/mapApi";
 import { loadAssets } from "../../../core/api/assets/assetApi";
 import { useCountdown } from "../data/timer";
+import { useGameSessionStore } from "@viking/gamesession-store";
+import { useSelectedCharacter } from "../../../shared/hooks/useSelectedCharacter";
 
 import "./style.scss";
 
 export const GameScreen = () => {
   const selectedMapId = useAccountStore((s) => s.selectedMapId);
+  const selectedCharacter = useSelectedCharacter();
   const { formatted } = useCountdown(20);
 
-  const selectedCharacter = useAccountStore((s) => s.selectedCharacter());
+  const { isGameActive, sessionId } = useGameSessionStore();
+
   const [selectedMap, setSelectedMap] = useState<any>(null);
 
   useEffect(() => {
@@ -36,13 +40,14 @@ export const GameScreen = () => {
     fetchData();
   }, [selectedMapId]);
 
-  if (!selectedMap || !selectedCharacter) return <div>Loading...</div>;
+  if (!selectedMap || !selectedCharacter || !isGameActive || !sessionId)
+    return <div>Loading...</div>;
 
   return (
     <div className="game-ui-overlay">
       <div className="game-timer">{formatted}</div>
       <div>
-        <GameCanvas selectedMap={selectedMap} />
+        <GameCanvas key={sessionId} selectedMap={selectedMap} />
       </div>
     </div>
   );

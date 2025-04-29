@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { characters } from "@viking/characters";
 import { MapComponent } from "@viking/map-selection";
 import { useAccountStore } from "@viking/game-store";
+import { useGameSessionStore } from "@viking/gamesession-store";
 
 export const SelectionScreen = () => {
   const navigate = useNavigate();
@@ -28,7 +29,22 @@ export const SelectionScreen = () => {
 
   const handleStartGame = () => {
     if (selectedCharacterId && selectedMapId && account) {
-      console.log("NEW GAMESTART — full store state:", account);
+      // 1) Start a fresh session
+      useGameSessionStore.getState().startSession();
+
+      // 2) Sanity‐check your key flags
+      const { account: accAfter, isDead, isHurt } = useAccountStore.getState();
+      const char = accAfter?.characters.find(
+        (c) => c.id === selectedCharacterId
+      );
+      console.log("🆕 NewGameState →", {
+        hp: char?.hp,
+        isDead,
+        isHurt,
+        sessionId: useGameSessionStore.getState().sessionId,
+      });
+
+      // 3) Go to /game
       navigate("/game");
     }
   };

@@ -15,7 +15,6 @@ export function startGameLoop({
   spriteSheets,
   isHurtRef,
   isPlayingHurt,
-  isDead,
   offscreenCanvas,
   collisionObstaclesRef,
   enemyInstancesRef,
@@ -28,11 +27,9 @@ export function startGameLoop({
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   bgCtx: CanvasRenderingContext2D;
-  selectedCharacter: any;
   spriteSheets: Record<string, HTMLImageElement>;
   isHurtRef: React.MutableRefObject<boolean>;
   isPlayingHurt: React.MutableRefObject<boolean>;
-  isDead: boolean;
   offscreenCanvas: HTMLCanvasElement;
   collisionObstaclesRef: React.MutableRefObject<any[]>;
   enemyInstancesRef: React.MutableRefObject<any[]>;
@@ -41,12 +38,18 @@ export function startGameLoop({
   let animationFrameId: number;
 
   const loop = async () => {
-    const character = useAccountStore.getState().selectedCharacter();
-    if (!character || !playerRef.current?.x || !playerRef.current?.y) return;
+    // grab the latest store state
+    const { account, isHurt, isDead } = useAccountStore.getState();
+    const charId = account?.selectedCharacterId;
+    const character = account?.characters.find((c) => c.id === charId) || null;
 
-    isHurtRef.current = useAccountStore.getState().isHurt;
+    if (!character || !playerRef.current?.x || !playerRef.current?.y) {
+      return;
+    }
 
-    if (!useAccountStore.getState().isDead) {
+    isHurtRef.current = isHurt;
+
+    if (!isDead) {
       updatePlayer(
         playerRef.current,
         keys,
@@ -66,7 +69,7 @@ export function startGameLoop({
         enemyInstancesRef.current,
         playerRef.current.x,
         playerRef.current.y,
-        false
+        isDead
       );
     }
 

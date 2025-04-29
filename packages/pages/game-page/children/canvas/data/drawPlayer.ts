@@ -1,5 +1,4 @@
 import { useAccountStore } from "@viking/game-store";
-import { isResetting } from "../../../../../shared/restart/restart";
 
 export const animationState = new Map<
   number,
@@ -27,9 +26,9 @@ export const drawPlayer = (
   isDead: boolean,
   isPlayingHurt: { current: boolean }
 ): boolean => {
-  if (isResetting) return false;
-
-  const character = useAccountStore.getState().selectedCharacter();
+  const account = useAccountStore.getState().account;
+  const character =
+    account?.characters.find((c) => c.id === selectedCharacterId) || null;
   if (
     !character ||
     !player ||
