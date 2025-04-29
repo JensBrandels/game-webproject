@@ -14,6 +14,7 @@
 - [x] Gameloop timer for maps
 - [x] Enemy spawning system (based on timer)
 - [x] Basic enemy AI (chasing)
+- [x] Game reset functionality
 - [ ] Weapon system
 - [ ] Combat system (player attack + enemy damage)
 - [ ] XP gain per kill
