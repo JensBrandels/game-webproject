@@ -1,3 +1,5 @@
+import { weapons } from "@viking/weapons";
+
 type Frame = {
   x: number;
   y: number;
@@ -52,7 +54,7 @@ export const characters: Character[] = [
     mp: 0,
     movementSpeed: 2,
     attackSpeed: 1.2,
-    weapons: [],
+    weapons: [weapons.find((w) => w.id === 1)!],
     animations: {
       idle: {
         sheet: "/IdlePlayer.png",

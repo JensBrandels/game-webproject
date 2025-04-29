@@ -38,6 +38,16 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
   const totalSeconds = 20 * 60;
   const location = useLocation();
 
+  useEffect(() => {
+    if (!selectedCharacter?.id) return;
+    console.log("🛠️ selectCharacter →", selectedCharacter.id);
+    useAccountStore.getState().selectCharacter(selectedCharacter.id);
+    console.log(
+      "🛠️ account.weapons now =",
+      useAccountStore.getState().account?.weapons
+    );
+  }, [selectedCharacter]);
+
   useGameTimer(
     setSecondsElapsed,
     () => {
@@ -102,6 +112,8 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     load();
   }, [selectedCharacter?.id, selectedMap?.id]);
 
+  const lastShootTimeRef = useRef(0);
+
   useEffect(() => {
     if (isLoading) return;
 
@@ -110,6 +122,8 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     const bgCanvas = backgroundCanvasRef.current;
     const bgCtx = bgCanvas?.getContext("2d");
     if (!canvas || !ctx || !bgCanvas || !bgCtx) return;
+
+    lastShootTimeRef.current = performance.now();
 
     const removeInput = setupInputHandlers(keys);
 
@@ -128,6 +142,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
       collisionObstaclesRef,
       enemyInstancesRef,
       setShowDeathScreen,
+      lastShootTimeRef,
     });
 
     return () => {
