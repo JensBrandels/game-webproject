@@ -6,21 +6,16 @@ import "./style.scss";
 export const DeathScreen = () => {
   const navigate = useNavigate();
 
-  const handleBack = () => {
-    try {
-      restartGame();
-      setTimeout(() => {
-        navigate("/selectionscreen");
-      }, 0);
-    } catch (err) {
-      console.error("DeathScreen navigation failed:", err);
-    }
+  const handleBackToSelection = () => {
+    console.log("DeathScreen: backing to selection → wiping state");
+    restartGame();
+    navigate("/selectionScreen");
   };
 
   return (
     <div className="death-screen">
       <h1>You Died</h1>
-      <button onClick={handleBack}>Back to Selection</button>
+      <button onClick={handleBackToSelection}>Back to Selection</button>
     </div>
   );
 };

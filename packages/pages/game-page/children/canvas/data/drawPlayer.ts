@@ -1,6 +1,6 @@
 import { useAccountStore } from "@viking/game-store";
 
-const animationState = new Map<
+export const animationState = new Map<
   number,
   {
     frameIndex: number;
@@ -26,12 +26,18 @@ export const drawPlayer = (
   isDead: boolean,
   isPlayingHurt: { current: boolean }
 ): boolean => {
-  if (!player || typeof player.x !== "number" || typeof player.y !== "number") {
+  const account = useAccountStore.getState().account;
+  const character =
+    account?.characters.find((c) => c.id === selectedCharacterId) || null;
+  if (
+    !character ||
+    !player ||
+    typeof player.x !== "number" ||
+    typeof player.y !== "number" ||
+    typeof character.hp !== "number"
+  ) {
     return false;
   }
-
-  const character = useAccountStore.getState().selectedCharacter();
-  if (!character) return false;
 
   const direction = player.direction || "down";
   const isMoving = player.x !== player.prevX || player.y !== player.prevY;
@@ -39,6 +45,7 @@ export const drawPlayer = (
 
   // 💀 DEATH animation
   if ((isDead || character.hp <= 0) && character.animations.death) {
+    if (!player || player.x == null || player.y == null) return false;
     const deathAnim = character.animations.death;
     const image = spriteSheets[deathAnim.sheet.replace(/^\/+/g, "")];
     if (!image || deathAnim.frames.length === 0) return false;
