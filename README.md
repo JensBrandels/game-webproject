@@ -18,7 +18,9 @@
 - [x] Weapon system (basic foundation set up)
 - [x] Combat system (player attack + enemy damage) (basic foundation set up)
 - [x] XP gain per kill
-- [ ] Level-up choices (temporary map upgrades)
+- [x] Level-up choices (temporary map upgrades) (static upgrades now working)
+- [ ] Adding more weapontypes (both as objects and animations)
+- [ ] Fixing weapons as level-up choices (making sure we can use more weapons at the same time)
 - [ ] Map win condition (e.g. survive timer, kill boss)
 
 ---
