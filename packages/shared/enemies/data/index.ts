@@ -19,6 +19,7 @@ export type Enemy = {
   id: number;
   name: string;
   sprite?: string;
+  xpReward: number;
   hitbox: {
     width: number;
     height: number;
@@ -40,6 +41,7 @@ export const enemies: Enemy[] = [
   {
     id: 1,
     name: "Green Blob",
+    xpReward: 15,
     hitbox: {
       width: 16,
       height: 16,
@@ -68,6 +70,7 @@ export const enemies: Enemy[] = [
   {
     id: 2,
     name: "Blue Blob",
+    xpReward: 20,
     hitbox: {
       width: 16,
       height: 16,

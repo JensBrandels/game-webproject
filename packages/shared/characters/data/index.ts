@@ -26,6 +26,8 @@ export type Character = {
   movementSpeed: number;
   attackSpeed: number;
   weapons: any[];
+  xp: number;
+  level: number;
   animations: {
     idle: Animation;
     walk: {
@@ -55,6 +57,8 @@ export const characters: Character[] = [
     movementSpeed: 2,
     attackSpeed: 1.2,
     weapons: [weapons.find((w) => w.id === 1)!],
+    xp: 0,
+    level: 1,
     animations: {
       idle: {
         sheet: "/IdlePlayer.png",

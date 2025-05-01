@@ -123,10 +123,10 @@ export async function renderFrame({
           frame.y,
           32,
           32,
-          p.x - camera.x - 16,
-          p.y - camera.y - 16,
-          32,
-          32
+          p.x - camera.x - weapon.size / 2,
+          p.y - camera.y - weapon.size / 2,
+          weapon.size,
+          weapon.size
         );
       }
     }

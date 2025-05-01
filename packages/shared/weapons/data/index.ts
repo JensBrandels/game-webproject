@@ -3,6 +3,8 @@ type Frame = {
   y: number;
 };
 
+type WeaponType = "projectile" | "melee" | "aura" | "orbital" | "beam";
+
 type Animation = {
   sheet: string;
   frames: Frame[];
@@ -11,9 +13,12 @@ type Animation = {
 export type Weapon = {
   id: number;
   name: string;
+  type: WeaponType;
   damage: number;
   speed: number;
   cooldown: number;
+  size: number;
+  range: number;
   animations: {
     shoot: {
       up: Animation;
@@ -28,9 +33,12 @@ export const weapons: Weapon[] = [
   {
     id: 1,
     name: "Fire Spell",
+    type: "projectile",
     damage: 25,
     speed: 0.5,
     cooldown: 1,
+    size: 64,
+    range: 100,
     animations: {
       shoot: {
         up: {

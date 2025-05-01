@@ -3,6 +3,7 @@ import { updateEnemies } from "./updateEnemies";
 import { handleDamage } from "./handleDamage";
 import { renderFrame } from "./renderFrame";
 import { useAccountStore } from "@viking/game-store";
+import { handleWeaponFire } from "./handleWeaponFire";
 
 type Projectile = {
   id: number;
@@ -51,8 +52,6 @@ export function startGameLoop({
   lastShootTimeRef: React.RefObject<number>;
 }) {
   let animationFrameId: number;
-
-  // store active projectiles
   const projectilesRef = { current: [] as Projectile[] };
 
   const loop = async () => {
@@ -61,7 +60,6 @@ export function startGameLoop({
     const charId = account?.selectedCharacterId;
     const character = account?.characters.find((c) => c.id === charId) || null;
 
-    // ensure we have everything we need
     if (
       !character ||
       playerRef.current.x == null ||
@@ -74,7 +72,6 @@ export function startGameLoop({
     isHurtRef.current = isHurt;
 
     if (!isDead) {
-      // update logic
       updatePlayer(
         playerRef.current,
         keys,
@@ -87,6 +84,7 @@ export function startGameLoop({
         canvas,
         ctx
       );
+
       updateEnemies(enemyInstancesRef, playerRef);
       handleDamage(
         enemyInstancesRef.current,
@@ -95,71 +93,39 @@ export function startGameLoop({
         isDead
       );
 
-      // shooting logic
-      const weapon = account?.weapons?.[0];
-      if (weapon && now - lastShootTimeRef.current > weapon.cooldown * 1000) {
-        lastShootTimeRef.current = now;
-        console.log("✴️ SHOOT", weapon.name);
+      //Logic for firing the weapons
+      handleWeaponFire({
+        now,
+        lastShootTimeRef,
+        projectilesRef,
+        player: playerRef.current,
+      });
 
-        const speed = weapon.speed;
-        const damage = weapon.damage;
-        const x = playerRef.current.x;
-        const y = playerRef.current.y;
+      //checking for collisions
+      projectilesRef.current = projectilesRef.current.filter((proj) => {
+        let hit = false;
 
-        projectilesRef.current.push(
-          {
-            id: now,
-            x,
-            y,
-            dx: 0,
-            dy: -1,
-            direction: "up",
-            traveled: 0,
-            maxDistance: 50,
-            speed,
-            damage,
-          },
-          {
-            id: now,
-            x,
-            y,
-            dx: 0,
-            dy: 1,
-            direction: "down",
-            traveled: 0,
-            maxDistance: 50,
-            speed,
-            damage,
-          },
-          {
-            id: now,
-            x,
-            y,
-            dx: -1,
-            dy: 0,
-            direction: "left",
-            traveled: 0,
-            maxDistance: 50,
-            speed,
-            damage,
-          },
-          {
-            id: now,
-            x,
-            y,
-            dx: 1,
-            dy: 0,
-            direction: "right",
-            traveled: 0,
-            maxDistance: 50,
-            speed,
-            damage,
+        for (let i = 0; i < enemyInstancesRef.current.length; i++) {
+          const enemy = enemyInstancesRef.current[i];
+          const enemySize = 32;
+          const half = enemySize / 2;
+          const dx = Math.abs(proj.x - enemy.x);
+          const dy = Math.abs(proj.y - enemy.y);
+
+          if (dx < half && dy < half) {
+            enemy.hp -= proj.damage;
+            hit = true;
+            if (enemy.hp <= 0) {
+              enemyInstancesRef.current.splice(i, 1);
+            }
+            break;
           }
-        );
-      }
+        }
+
+        return !hit;
+      });
     }
 
-    // render everything
     await renderFrame({
       ctx,
       bgCtx,
@@ -183,7 +149,5 @@ export function startGameLoop({
 
   animationFrameId = requestAnimationFrame(loop);
 
-  return () => {
-    cancelAnimationFrame(animationFrameId);
-  };
+  return () => cancelAnimationFrame(animationFrameId);
 }
