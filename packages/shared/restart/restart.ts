@@ -29,7 +29,7 @@ export function restartGame() {
   // ————— RESET ACCOUNT STATE —————
   if (account && charId != null) {
     const updatedChars = account.characters.map((c) =>
-      c.id === charId ? { ...c, hp: c.maxHp, items: [], xp: 0 } : c
+      c.id === charId ? { ...c, hp: c.maxHp, items: [], xp: 0, level: 1 } : c
     );
     useAccountStore.getState().setAccount({
       ...account,

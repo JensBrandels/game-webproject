@@ -17,7 +17,7 @@
 - [x] Game reset functionality
 - [x] Weapon system (basic foundation set up)
 - [x] Combat system (player attack + enemy damage) (basic foundation set up)
-- [ ] XP gain per kill
+- [x] XP gain per kill
 - [ ] Level-up choices (temporary map upgrades)
 - [ ] Map win condition (e.g. survive timer, kill boss)
 
