@@ -12,6 +12,7 @@ import { loadSpriteSheets } from "../data/loadSpriteSheets";
 import { loadBackground } from "../data/loadBackground";
 import { useGameTimer } from "../data/useGameTimer";
 import { useSelectedCharacter } from "../../../../../shared/hooks/useSelectedCharacter";
+import { XPBar } from "@viking/xpbar";
 
 import "./style.scss";
 
@@ -158,6 +159,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
     <LoadingScreen currentStep={currentStep} progress={progress} />
   ) : (
     <>
+      <XPBar />
       <div className="game-timer">
         {minutes}:{seconds}
       </div>

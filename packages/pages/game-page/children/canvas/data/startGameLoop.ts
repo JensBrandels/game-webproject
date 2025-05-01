@@ -4,6 +4,9 @@ import { handleDamage } from "./handleDamage";
 import { renderFrame } from "./renderFrame";
 import { useAccountStore } from "@viking/game-store";
 import { handleWeaponFire } from "./handleWeaponFire";
+import { getRequiredXp } from "./characterLeveling";
+import { enemies } from "@viking/enemies";
+import { useGameSessionStore } from "@viking/gamesession-store";
 
 type Projectile = {
   id: number;
@@ -117,6 +120,25 @@ export function startGameLoop({
             hit = true;
             if (enemy.hp <= 0) {
               enemyInstancesRef.current.splice(i, 1);
+
+              //Grant XP
+              const xpGain =
+                enemies.find((e) => e.id === enemy.enemyId)?.xpReward ?? 0;
+              character.xp += xpGain;
+
+              const requiredXp = getRequiredXp(character.level);
+              if (character.xp >= requiredXp) {
+                character.level += 1;
+                character.xp -= requiredXp;
+
+                // Optional: stat boosts on level up
+                character.maxHp += 10;
+                character.hp = character.maxHp;
+                character.attackSpeed += 0.1;
+
+                //and call the gameSessionStore for leveling up to trigger the UI for choosing cool upgrades
+                useGameSessionStore.getState().setLevelUpReady(true);
+              }
             }
             break;
           }
