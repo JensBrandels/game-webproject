@@ -1,6 +1,20 @@
 import { drawPlayer } from "./drawPlayer";
 import { drawEnemy } from "./drawEnemies";
 import { drawPlacedObjects } from "./drawPlacedObjects";
+import { useAccountStore } from "@viking/game-store";
+
+type Projectile = {
+  id: number;
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+  direction: "up" | "down" | "left" | "right";
+  traveled: number;
+  maxDistance: number;
+  speed: number;
+  damage: number;
+};
 
 type EnemyInstance = {
   id: number;
@@ -27,6 +41,7 @@ export async function renderFrame({
   offscreenCanvas,
   collisionObstaclesRef,
   enemyInstancesRef,
+  projectilesRef, // ← must be passed in
   setShowDeathScreen,
 }: {
   ctx: CanvasRenderingContext2D;
@@ -42,8 +57,10 @@ export async function renderFrame({
   offscreenCanvas: HTMLCanvasElement;
   collisionObstaclesRef: React.MutableRefObject<any[]>;
   enemyInstancesRef: React.MutableRefObject<EnemyInstance[]>;
+  projectilesRef: React.MutableRefObject<Projectile[]>; // ← must match above
   setShowDeathScreen: (val: boolean) => void;
 }) {
+  // 1) Draw background
   bgCtx.clearRect(0, 0, bgCtx.canvas.width, bgCtx.canvas.height);
   bgCtx.drawImage(
     offscreenCanvas,
@@ -57,8 +74,10 @@ export async function renderFrame({
     bgCtx.canvas.height
   );
 
+  // 2) Clear main canvas
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+  // 3) Draw collision layer
   await drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "collision");
   collisionObstaclesRef.current = [];
   await drawPlacedObjects(
@@ -69,6 +88,7 @@ export async function renderFrame({
     collisionObstaclesRef.current
   );
 
+  // 4) Draw player
   const finished = drawPlayer(
     ctx,
     playerRef.current,
@@ -80,13 +100,48 @@ export async function renderFrame({
     isPlayingHurt
   );
 
-  if (character.hp <= 0 && finished) {
-    setShowDeathScreen(true);
-  }
+  // 5) Move & draw projectiles
+  projectilesRef.current = projectilesRef.current.filter((p) => {
+    // move
+    p.x += p.dx * p.speed;
+    p.y += p.dy * p.speed;
+    p.traveled += p.speed;
 
-  enemyInstancesRef.current.forEach((enemy) => {
-    drawEnemy(ctx, enemy, camera, spriteSheets);
+    // draw animation frame
+    const account = useAccountStore.getState().account!;
+    const weapon = account.weapons[0];
+    if (weapon) {
+      const anim = weapon.animations.shoot[p.direction];
+      const total = anim.frames.length;
+      const idx = Math.floor((p.traveled / p.maxDistance) * total) % total;
+      const frame = anim.frames[idx];
+      const img = spriteSheets[anim.sheet.replace(/^\/+/g, "")];
+      if (img) {
+        ctx.drawImage(
+          img,
+          frame.x,
+          frame.y,
+          32,
+          32,
+          p.x - camera.x - weapon.size / 2,
+          p.y - camera.y - weapon.size / 2,
+          weapon.size,
+          weapon.size
+        );
+      }
+    }
+
+    return p.traveled < p.maxDistance;
   });
 
+  // 6) Death screen
+  if (character.hp <= 0 && finished) setShowDeathScreen(true);
+
+  // 7) Draw enemies
+  enemyInstancesRef.current.forEach((enemy) =>
+    drawEnemy(ctx, enemy, camera, spriteSheets)
+  );
+
+  // 8) Draw visuals
   await drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
 }

@@ -56,4 +56,17 @@ export const drawEnemy = (
     frameWidth,
     frameHeight
   );
+
+  // Draw HP bar for enemy
+  const maxHp = enemies.find((e) => e.id === enemyInstance.enemyId)?.hp ?? 1;
+  const hpRatio = Math.max(0, enemyInstance.hp / maxHp);
+  const barWidth = frameWidth;
+  const barHeight = 4;
+  const barX = drawX;
+  const barY = drawY - 6;
+
+  ctx.fillStyle = "black";
+  ctx.fillRect(barX, barY, barWidth, barHeight);
+  ctx.fillStyle = "red";
+  ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
 };

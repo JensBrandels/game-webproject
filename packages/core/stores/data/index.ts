@@ -1,11 +1,6 @@
 import { create } from "zustand";
 import { characters, type Character } from "@viking/characters";
-
-type Item = {
-  id: string;
-  name: string;
-  effect: string;
-};
+import { type Weapon } from "@viking/weapons";
 
 type Account = {
   id: string;
@@ -18,7 +13,7 @@ type Account = {
     accountLevel: number;
     xp: number;
   };
-  inventory: Item[];
+  weapons: Weapon[];
   stats: {
     enemiesKilled: number;
     timePlayed: number;
@@ -58,7 +53,7 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
       accountLevel: 1,
       xp: 0,
     },
-    inventory: [],
+    weapons: [],
     stats: {
       enemiesKilled: 0,
       timePlayed: 0,
@@ -76,17 +71,21 @@ export const useAccountStore = create<AccountStore>((set, get) => ({
 
   setAccount: (data) => set({ account: data }),
 
-  selectCharacter: (id) =>
+  selectCharacter: (id) => {
+    const char = characters.find((c) => c.id === id);
+    if (!char) return;
     set((state) =>
       state.account
         ? {
             account: {
               ...state.account,
               selectedCharacterId: id,
+              weapons: [...char.weapons],
             },
           }
         : {}
-    ),
+    );
+  },
 
   setSelectedMapId: (id: string) => set({ selectedMapId: id }),
 
