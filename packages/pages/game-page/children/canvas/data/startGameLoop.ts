@@ -63,6 +63,12 @@ export function startGameLoop({
     const charId = account?.selectedCharacterId;
     const character = account?.characters.find((c) => c.id === charId) || null;
 
+    const isPaused = useGameSessionStore.getState().levelUpReady;
+    if (isPaused) {
+      animationFrameId = requestAnimationFrame(loop);
+      return;
+    }
+
     if (
       !character ||
       playerRef.current.x == null ||

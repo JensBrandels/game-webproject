@@ -13,6 +13,8 @@ import { loadBackground } from "../data/loadBackground";
 import { useGameTimer } from "../data/useGameTimer";
 import { useSelectedCharacter } from "../../../../../shared/hooks/useSelectedCharacter";
 import { XPBar } from "@viking/xpbar";
+import { useGameSessionStore } from "@viking/gamesession-store";
+import { LevelUpScreen } from "@viking/levelingoptions";
 
 import "./style.scss";
 
@@ -38,6 +40,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
   const [secondsElapsed, setSecondsElapsed] = useState<number>(0);
   const totalSeconds = 20 * 60;
   const location = useLocation();
+  const levelUpReady = useGameSessionStore((s) => s.levelUpReady);
 
   useEffect(() => {
     if (!selectedCharacter?.id) return;
@@ -160,6 +163,7 @@ export const GameCanvas = ({ selectedMap }: { selectedMap: any }) => {
   ) : (
     <>
       <XPBar />
+      {levelUpReady && <LevelUpScreen />}
       <div className="game-timer">
         {minutes}:{seconds}
       </div>
