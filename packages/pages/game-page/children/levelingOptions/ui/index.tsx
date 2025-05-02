@@ -1,6 +1,7 @@
 import { useGameSessionStore } from "@viking/gamesession-store";
 import { useSelectedCharacter } from "../../../../../shared/hooks/useSelectedCharacter";
 import { useAccountStore } from "@viking/game-store";
+import { weapons } from "@viking/weapons";
 
 import "./style.scss";
 
@@ -19,9 +20,19 @@ export function LevelUpScreen() {
       case "+20% Range":
         if (weapon) weapon.range *= 1.2;
         break;
-      case "+1 Weapon":
-        // implement later
+      case "+1 Weapon": {
+        const shield = weapons.find((w) => w.name === "Viking Shield");
+        if (shield) {
+          useAccountStore.setState((s) => ({
+            account: {
+              ...s.account!,
+              weapons: [...s.account!.weapons, { ...shield }],
+            },
+          }));
+          console.log("🛡️Shield added");
+        }
         break;
+      }
     }
 
     setLevelUpReady(false);

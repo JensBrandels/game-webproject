@@ -5,7 +5,7 @@ type Frame = {
 
 type WeaponType = "projectile" | "melee" | "aura" | "orbital" | "beam";
 
-type Animation = {
+type WeaponAnimation = {
   sheet: string;
   frames: Frame[];
 };
@@ -19,14 +19,16 @@ export type Weapon = {
   cooldown: number;
   size: number;
   range: number;
-  animations: {
-    shoot: {
-      up: Animation;
-      down: Animation;
-      left: Animation;
-      right: Animation;
-    };
-  };
+  animations:
+    | Record<string, WeaponAnimation>
+    | {
+        shoot: {
+          up: WeaponAnimation;
+          down: WeaponAnimation;
+          left: WeaponAnimation;
+          right: WeaponAnimation;
+        };
+      };
 };
 
 export const weapons: Weapon[] = [
@@ -69,6 +71,25 @@ export const weapons: Weapon[] = [
             y: i * 32,
           })),
         },
+      },
+    },
+  },
+  {
+    id: 2,
+    name: "Viking Shield",
+    type: "orbital",
+    damage: 15,
+    speed: 0.002,
+    cooldown: 0,
+    size: 64,
+    range: 80,
+    animations: {
+      spin: {
+        sheet: "/ShieldSpell.png",
+        frames: Array.from({ length: 4 }, (_, i) => ({
+          x: 0,
+          y: i * 64,
+        })),
       },
     },
   },

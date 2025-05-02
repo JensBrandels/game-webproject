@@ -2,6 +2,12 @@ import { drawPlayer } from "./drawPlayer";
 import { drawEnemy } from "./drawEnemies";
 import { drawPlacedObjects } from "./drawPlacedObjects";
 import { useAccountStore } from "@viking/game-store";
+import { drawOrbitalWeapons } from "../data/drawWeapon";
+
+type WeaponAnimation = {
+  sheet: string;
+  frames: { x: number; y: number }[];
+};
 
 type Projectile = {
   id: number;
@@ -14,6 +20,7 @@ type Projectile = {
   maxDistance: number;
   speed: number;
   damage: number;
+  isOrbital?: boolean;
 };
 
 type EnemyInstance = {
@@ -28,6 +35,7 @@ type EnemyInstance = {
 };
 
 export async function renderFrame({
+  frameIndex,
   ctx,
   bgCtx,
   playerRef,
@@ -41,9 +49,10 @@ export async function renderFrame({
   offscreenCanvas,
   collisionObstaclesRef,
   enemyInstancesRef,
-  projectilesRef, // ← must be passed in
+  projectilesRef,
   setShowDeathScreen,
 }: {
+  frameIndex: number;
   ctx: CanvasRenderingContext2D;
   bgCtx: CanvasRenderingContext2D;
   playerRef: React.RefObject<any>;
@@ -57,7 +66,7 @@ export async function renderFrame({
   offscreenCanvas: HTMLCanvasElement;
   collisionObstaclesRef: React.MutableRefObject<any[]>;
   enemyInstancesRef: React.MutableRefObject<EnemyInstance[]>;
-  projectilesRef: React.MutableRefObject<Projectile[]>; // ← must match above
+  projectilesRef: React.MutableRefObject<Projectile[]>;
   setShowDeathScreen: (val: boolean) => void;
 }) {
   // 1) Draw background
@@ -102,6 +111,8 @@ export async function renderFrame({
 
   // 5) Move & draw projectiles
   projectilesRef.current = projectilesRef.current.filter((p) => {
+    if (p.isOrbital) return true;
+
     // move
     p.x += p.dx * p.speed;
     p.y += p.dy * p.speed;
@@ -110,27 +121,52 @@ export async function renderFrame({
     // draw animation frame
     const account = useAccountStore.getState().account!;
     const weapon = account.weapons[0];
-    if (weapon) {
-      const anim = weapon.animations.shoot[p.direction];
+    if (
+      weapon &&
+      weapon.type === "projectile" &&
+      "shoot" in weapon.animations
+    ) {
+      const shootAnims = weapon.animations.shoot as Record<
+        "up" | "down" | "left" | "right",
+        WeaponAnimation
+      >;
+      const anim = shootAnims[p.direction];
       const total = anim.frames.length;
       const idx = Math.floor((p.traveled / p.maxDistance) * total) % total;
       const frame = anim.frames[idx];
       const img = spriteSheets[anim.sheet.replace(/^\/+/g, "")];
+
       if (img) {
+        const drawSize = 32;
+
+        // draw the projectile scaled to 32×32
         ctx.drawImage(
           img,
           frame.x,
           frame.y,
           32,
           32,
-          p.x - camera.x - weapon.size / 2,
-          p.y - camera.y - weapon.size / 2,
-          weapon.size,
-          weapon.size
+          p.x - camera.x - drawSize / 2,
+          p.y - camera.y - drawSize / 2,
+          drawSize,
+          drawSize
         );
+
+        // debug hitbox (32×32)
+        ctx.save();
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+          p.x - camera.x - drawSize / 2,
+          p.y - camera.y - drawSize / 2,
+          drawSize,
+          drawSize
+        );
+        ctx.restore();
       }
     }
 
+    // keep projectile only while under maxDistance
     return p.traveled < p.maxDistance;
   });
 
@@ -144,4 +180,15 @@ export async function renderFrame({
 
   // 8) Draw visuals
   await drawPlacedObjects(ctx, selectedMap.placedObjects, camera, "visual");
+
+  drawOrbitalWeapons({
+    ctx,
+    projectiles: projectilesRef.current,
+    frameIndex, // your game-loop frame counter
+    cameraOffset: camera,
+    spriteSheets,
+  });
+
+  // finally, tell the caller whether the death animation finished
+  return finished;
 }

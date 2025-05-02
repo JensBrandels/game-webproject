@@ -17,56 +17,49 @@ export const drawEnemy = (
   camera: { x: number; y: number },
   spriteSheets: Record<string, HTMLImageElement>
 ) => {
-  const enemyData = enemies.find((e) => e.id === enemyInstance.enemyId);
-  if (!enemyData) return;
+  const data = enemies.find((e) => e.id === enemyInstance.enemyId);
+  if (!data) return;
 
-  const animation = enemyData.animations[enemyInstance.animationState];
-  if (!animation) return;
+  const anim = data.animations[enemyInstance.animationState];
+  if (!anim) return;
 
-  //Handle directional animations
-  const resolvedAnim =
-    "frames" in animation
-      ? animation
-      : animation[enemyInstance.direction ?? "down"] ??
-        animation["left"] ??
-        Object.values(animation)[0];
-
-  if (!resolvedAnim || !resolvedAnim.frames) return;
+  const resolved =
+    "frames" in anim
+      ? anim
+      : anim[enemyInstance.direction ?? "down"] ||
+        anim["left"] ||
+        Object.values(anim)[0];
+  if (!resolved?.frames) return;
 
   const frame =
-    resolvedAnim.frames[enemyInstance.frameIndex % resolvedAnim.frames.length];
-  const sprite = spriteSheets[resolvedAnim.sheet.replace(/^\/+/, "")];
+    resolved.frames[enemyInstance.frameIndex % resolved.frames.length];
+  const sprite = spriteSheets[resolved.sheet.replace(/^\/+/, "")];
   if (!sprite) return;
 
-  const { offsetX, offsetY } = enemyData.hitbox;
-  const frameWidth = enemyData.spriteSize?.width ?? 32;
-  const frameHeight = enemyData.spriteSize?.height ?? 32;
+  // --- center sprite on x,y ---
+  const fw = data.spriteSize?.width ?? 32;
+  const fh = data.spriteSize?.height ?? 32;
+  const drawX = enemyInstance.x - camera.x - fw / 2;
+  const drawY = enemyInstance.y - camera.y - fh / 2;
 
-  const drawX = enemyInstance.x - camera.x - offsetX;
-  const drawY = enemyInstance.y - camera.y - offsetY;
+  // 1) draw sprite
+  ctx.drawImage(sprite, frame.x, frame.y, fw, fh, drawX, drawY, fw, fh);
 
-  ctx.drawImage(
-    sprite,
-    frame.x,
-    frame.y,
-    frameWidth,
-    frameHeight,
-    drawX,
-    drawY,
-    frameWidth,
-    frameHeight
-  );
-
-  // Draw HP bar for enemy
-  const maxHp = enemies.find((e) => e.id === enemyInstance.enemyId)?.hp ?? 1;
-  const hpRatio = Math.max(0, enemyInstance.hp / maxHp);
-  const barWidth = frameWidth;
-  const barHeight = 4;
-  const barX = drawX;
-  const barY = drawY - 6;
-
+  // 2) HP bar (optional, unchanged)
+  const ratio = Math.max(0, enemyInstance.hp / data.hp);
   ctx.fillStyle = "black";
-  ctx.fillRect(barX, barY, barWidth, barHeight);
+  ctx.fillRect(drawX, drawY - 6, fw, 4);
   ctx.fillStyle = "red";
-  ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+  ctx.fillRect(drawX, drawY - 6, fw * ratio, 4);
+
+  // 3) debug-draw hitbox relative to that sprite
+  const { offsetX, offsetY, width: hitW, height: hitH } = data.hitbox;
+  const hx = drawX + offsetX;
+  const hy = drawY + offsetY;
+
+  ctx.save();
+  ctx.strokeStyle = "yellow";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(hx, hy, hitW, hitH);
+  ctx.restore();
 };

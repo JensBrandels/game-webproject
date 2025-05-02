@@ -11,77 +11,81 @@ type Projectile = {
   maxDistance: number;
   speed: number;
   damage: number;
+  isOrbital?: boolean;
 };
 
 export function handleWeaponFire({
   now,
-  lastShootTimeRef,
+  lastShootTimesRef,
   projectilesRef,
   player,
 }: {
   now: number;
-  lastShootTimeRef: React.MutableRefObject<number>;
+  lastShootTimesRef: React.MutableRefObject<Record<number, number>>;
   projectilesRef: React.MutableRefObject<Projectile[]>;
   player: any;
 }) {
   const state = useAccountStore.getState();
-
-  //Get weapon and character manually from Zustand
-  const weapon = state.account?.weapons?.[0];
+  const weapons = state.account?.weapons || [];
   const character = state.account?.characters.find(
     (c) => c.id === state.account?.selectedCharacterId
   );
+  if (!character) return;
 
-  if (!weapon || !character) return;
+  for (const weapon of weapons) {
+    // per-weapon cooldown lookup
+    const last = lastShootTimesRef.current[weapon.id] || 0;
+    const cd = (weapon.cooldown / character.attackSpeed) * 1000;
+    if (now - last < cd) continue;
 
-  const cooldown = (weapon.cooldown / character.attackSpeed) * 1000;
-  if (now - lastShootTimeRef.current < cooldown) return;
-
-  lastShootTimeRef.current = now;
-
-  switch (weapon.type) {
-    case "projectile":
-      const directions: {
-        dx: number;
-        dy: number;
-        dir: "up" | "down" | "left" | "right";
-      }[] = [
-        { dx: 0, dy: -1, dir: "up" },
-        { dx: 0, dy: 1, dir: "down" },
-        { dx: -1, dy: 0, dir: "left" },
-        { dx: 1, dy: 0, dir: "right" },
-      ];
-
-      directions.forEach(({ dx, dy, dir }) => {
-        projectilesRef.current.push({
-          id: now + Math.random(),
-          x: player.x,
-          y: player.y,
-          dx,
-          dy,
-          direction: dir,
-          traveled: 0,
-          maxDistance: weapon.range,
-          speed: weapon.speed ?? 1,
-          damage: weapon.damage,
+    switch (weapon.type) {
+      case "projectile": {
+        (["up", "down", "left", "right"] as const).forEach((dir) => {
+          const [dx, dy] =
+            dir === "up"
+              ? [0, -1]
+              : dir === "down"
+              ? [0, 1]
+              : dir === "left"
+              ? [-1, 0]
+              : [1, 0];
+          projectilesRef.current.push({
+            id: now + Math.random(),
+            x: player.x,
+            y: player.y,
+            dx,
+            dy,
+            direction: dir,
+            traveled: 0,
+            maxDistance: weapon.range,
+            speed: weapon.speed || 1,
+            damage: weapon.damage,
+            isOrbital: false,
+          });
         });
-      });
-      break;
+        break;
+      }
+      case "orbital": {
+        if (!projectilesRef.current.some((p) => p.isOrbital)) {
+          projectilesRef.current.push({
+            id: now + Math.random(),
+            x: player.x + weapon.range,
+            y: player.y,
+            dx: 0,
+            dy: 0,
+            direction: "up",
+            traveled: 0,
+            maxDistance: weapon.range,
+            speed: weapon.speed,
+            damage: weapon.damage,
+            isOrbital: true,
+          });
+        }
+        break;
+      }
+    }
 
-    case "melee":
-      // add logic to hit enemies in front of player
-      break;
-
-    case "aura":
-      // damage nearby enemies every interval
-      break;
-
-    case "orbital":
-      // spawn orbiting projectile(s)
-      break;
-
-    case "beam":
-      // long range instant hit in a line
-      break;
+    // reset this weapon's timer
+    lastShootTimesRef.current[weapon.id] = now;
   }
 }

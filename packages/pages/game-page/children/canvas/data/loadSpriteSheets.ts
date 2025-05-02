@@ -1,4 +1,5 @@
 import { enemies } from "@viking/enemies";
+import { weapons as allWeapons } from "@viking/weapons";
 
 export async function loadSpriteSheets(
   character: any
@@ -15,32 +16,42 @@ export async function loadSpriteSheets(
   if (character.animations.death?.sheet)
     sheets.add(character.animations.death.sheet);
 
-  // ← Add weapon shoot sheets
-  character.weapons?.forEach((w: any) => {
-    Object.values(w.animations.shoot).forEach((anim: any) => {
-      sheets.add(anim.sheet);
-    });
+  // Weapon animations (projectile + orbital)
+  allWeapons.forEach((w) => {
+    if ("shoot" in w.animations) {
+      Object.values(w.animations.shoot).forEach((a: any) =>
+        sheets.add(a.sheet)
+      );
+    }
+    if ("spin" in w.animations) {
+      sheets.add((w.animations as any).spin.sheet);
+    }
   });
 
   // Enemy animations
   enemies.forEach((e) => {
     Object.values(e.animations).forEach((a: any) => {
-      if ("sheet" in a) sheets.add(a.sheet);
-      else Object.values(a).forEach((d: any) => sheets.add(d.sheet));
+      if ("sheet" in a) {
+        sheets.add(a.sheet);
+      } else {
+        Object.values(a).forEach((d: any) => sheets.add(d.sheet));
+      }
     });
   });
 
   const imgs: Record<string, HTMLImageElement> = {};
-  let count = 0;
 
-  for (const p of sheets) {
-    await new Promise<void>((res) => {
+  for (const path of sheets) {
+    await new Promise<void>((resolve) => {
       const img = new Image();
-      img.src = p;
+      img.src = path;
       img.onload = () => {
-        imgs[p.replace(/^\/+/g, "")] = img;
-        count++;
-        res();
+        imgs[path.replace(/^\/+/g, "")] = img;
+        resolve();
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load sprite sheet: ${path}`);
+        resolve();
       };
     });
   }
