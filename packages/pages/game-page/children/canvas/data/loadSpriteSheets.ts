@@ -26,6 +26,9 @@ export async function loadSpriteSheets(
     if ("spin" in w.animations) {
       sheets.add((w.animations as any).spin.sheet);
     }
+    if ("idle" in w.animations) {
+      sheets.add((w.animations as any).idle.sheet);
+    }
   });
 
   // Enemy animations

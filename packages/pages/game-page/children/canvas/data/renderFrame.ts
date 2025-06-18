@@ -2,7 +2,7 @@ import { drawPlayer } from "./drawPlayer";
 import { drawEnemy } from "./drawEnemies";
 import { drawPlacedObjects } from "./drawPlacedObjects";
 import { useAccountStore } from "@viking/game-store";
-import { drawOrbitalWeapons } from "../data/drawWeapon";
+import { drawOrbitalWeapons, drawAura } from "../data/drawWeapon";
 
 type WeaponAnimation = {
   sheet: string;
@@ -21,6 +21,7 @@ type Projectile = {
   speed: number;
   damage: number;
   isOrbital?: boolean;
+  isAura?: boolean;
 };
 
 type EnemyInstance = {
@@ -111,7 +112,7 @@ export async function renderFrame({
 
   // 5) Move & draw projectiles
   projectilesRef.current = projectilesRef.current.filter((p) => {
-    if (p.isOrbital) return true;
+    if (p.isOrbital || p.isAura) return true;
 
     // move
     p.x += p.dx * p.speed;
@@ -152,17 +153,17 @@ export async function renderFrame({
           drawSize
         );
 
-        // debug hitbox (32×32)
-        ctx.save();
-        ctx.strokeStyle = "blue";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(
-          p.x - camera.x - drawSize / 2,
-          p.y - camera.y - drawSize / 2,
-          drawSize,
-          drawSize
-        );
-        ctx.restore();
+        //   // debug hitbox (32×32)
+        //   ctx.save();
+        //   ctx.strokeStyle = "blue";
+        //   ctx.lineWidth = 2;
+        //   ctx.strokeRect(
+        //     p.x - camera.x - drawSize / 2,
+        //     p.y - camera.y - drawSize / 2,
+        //     drawSize,
+        //     drawSize
+        //   );
+        //   ctx.restore();
       }
     }
 
@@ -184,7 +185,15 @@ export async function renderFrame({
   drawOrbitalWeapons({
     ctx,
     projectiles: projectilesRef.current,
-    frameIndex, // your game-loop frame counter
+    frameIndex,
+    cameraOffset: camera,
+    spriteSheets,
+  });
+
+  drawAura({
+    ctx,
+    frameIndex,
+    projectiles: projectilesRef.current.filter((p) => p.isAura),
     cameraOffset: camera,
     spriteSheets,
   });

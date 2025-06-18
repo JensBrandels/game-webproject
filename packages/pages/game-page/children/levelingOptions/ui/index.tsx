@@ -20,16 +20,39 @@ export function LevelUpScreen() {
       case "+20% Range":
         if (weapon) weapon.range *= 1.2;
         break;
-      case "+1 Weapon": {
-        const shield = weapons.find((w) => w.name === "Viking Shield");
-        if (shield) {
-          useAccountStore.setState((s) => ({
-            account: {
-              ...s.account!,
-              weapons: [...s.account!.weapons, { ...shield }],
-            },
-          }));
-          console.log("🛡️Shield added");
+      case "Add Viking Shield": {
+        const exists = useAccountStore
+          .getState()
+          .account?.weapons.some((w) => w.name === "Viking Shield");
+        if (!exists) {
+          const shield = weapons.find((w) => w.name === "Viking Shield");
+          if (shield) {
+            useAccountStore.setState((s) => ({
+              account: {
+                ...s.account!,
+                weapons: [...s.account!.weapons, { ...shield }],
+              },
+            }));
+            console.log("🛡️ Viking Shield added");
+          }
+        }
+        break;
+      }
+      case "Add Holy Aura": {
+        const exists = useAccountStore
+          .getState()
+          .account?.weapons.some((w) => w.name === "Holy Aura");
+        if (!exists) {
+          const aura = weapons.find((w) => w.name === "Holy Aura");
+          if (aura) {
+            useAccountStore.setState((s) => ({
+              account: {
+                ...s.account!,
+                weapons: [...s.account!.weapons, { ...aura }],
+              },
+            }));
+            console.log("✨ Holy Aura added");
+          }
         }
         break;
       }
@@ -38,7 +61,12 @@ export function LevelUpScreen() {
     setLevelUpReady(false);
   };
 
-  const options = ["+50% Attack Speed", "+1 Weapon", "+20% Range"];
+  const options = [
+    "+50% Attack Speed",
+    "+20% Range",
+    "Add Viking Shield",
+    "Add Holy Aura",
+  ];
 
   return (
     <div className="levelup-overlay">

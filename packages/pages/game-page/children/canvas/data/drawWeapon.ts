@@ -7,6 +7,14 @@ type WeaponAnimation = {
   frames: Frame[];
 };
 
+type AuraDrawOpts = {
+  ctx: CanvasRenderingContext2D;
+  frameIndex: number;
+  projectiles: Projectile[];
+  cameraOffset: { x: number; y: number };
+  spriteSheets: Record<string, HTMLImageElement>;
+};
+
 type Projectile = {
   id: number;
   x: number;
@@ -19,6 +27,7 @@ type Projectile = {
   speed: number;
   damage: number;
   isOrbital?: boolean;
+  isAura?: boolean;
 };
 
 type Direction = "up" | "down" | "left" | "right";
@@ -137,18 +146,64 @@ export function drawOrbitalWeapons({
         drawSize,
         drawSize
       );
-      const debugSize = 32; // same as your collision half-size * 2
+      //   const debugSize = 32; // same as your collision half-size * 2
 
-      ctx.save();
-      ctx.strokeStyle = "blue";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(
-        p.x - cameraOffset.x - debugSize / 2,
-        p.y - cameraOffset.y - debugSize / 2,
-        debugSize,
-        debugSize
-      );
-      ctx.restore();
+      //   ctx.save();
+      //   ctx.strokeStyle = "blue";
+      //   ctx.lineWidth = 2;
+      //   ctx.strokeRect(
+      //     p.x - cameraOffset.x - debugSize / 2,
+      //     p.y - cameraOffset.y - debugSize / 2,
+      //     debugSize,
+      //     debugSize
+      //   );
+      //   ctx.restore();
     }
+  });
+}
+
+export function drawAura({
+  ctx,
+  frameIndex,
+  projectiles,
+  cameraOffset,
+  spriteSheets,
+}: AuraDrawOpts) {
+  const { account } = useAccountStore.getState();
+  const auraW = account?.weapons.find((w) => w.type === "aura");
+  if (!auraW) return;
+
+  const anim = (auraW.animations as any).idle as WeaponAnimation;
+  if (!anim?.frames.length) return;
+
+  const sheetKey = anim.sheet.replace(/^\/+/g, "");
+  const image = spriteSheets[sheetKey];
+  if (!image) return;
+
+  const frameSpeedDivider = 6; // higher = slower
+  const frame =
+    anim.frames[
+      Math.floor(frameIndex / frameSpeedDivider) % anim.frames.length
+    ];
+  const drawSize = auraW.size;
+  const srcWidth = 64;
+  const srcHeight = 64;
+  const half = drawSize / 2;
+
+  projectiles.forEach((p) => {
+    const x = p.x - cameraOffset.x - half;
+    const y = p.y - cameraOffset.y - half;
+
+    ctx.drawImage(
+      image,
+      frame.x,
+      frame.y,
+      srcWidth,
+      srcHeight,
+      x,
+      y,
+      drawSize,
+      drawSize
+    );
   });
 }

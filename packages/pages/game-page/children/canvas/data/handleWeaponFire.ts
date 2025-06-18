@@ -12,6 +12,9 @@ type Projectile = {
   speed: number;
   damage: number;
   isOrbital?: boolean;
+  isAura?: boolean;
+  tickInterval?: number;
+  lastHitTimestamp?: number;
 };
 
 export function handleWeaponFire({
@@ -83,6 +86,30 @@ export function handleWeaponFire({
         }
         break;
       }
+      case "aura":
+        // remove any existing aura
+        projectilesRef.current = projectilesRef.current.filter(
+          (p) => !p.isAura
+        );
+
+        // spawn a fresh aura centered on the player
+        projectilesRef.current.push({
+          id: now + Math.random(),
+          x: player.x,
+          y: player.y,
+          dx: 0,
+          dy: 0,
+          direction: "up",
+          traveled: 0,
+          maxDistance: weapon.range,
+          speed: 0,
+          damage: weapon.damage,
+          isOrbital: false,
+          isAura: true,
+          tickInterval: cd,
+          lastHitTimestamp: 0,
+        });
+        break;
     }
 
     // reset this weapon's timer

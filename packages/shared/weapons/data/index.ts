@@ -93,4 +93,23 @@ export const weapons: Weapon[] = [
       },
     },
   },
+  {
+    id: 3,
+    name: "Holy Aura",
+    type: "aura",
+    damage: 10,
+    speed: 0,
+    cooldown: 1,
+    size: 128,
+    range: 96,
+    animations: {
+      idle: {
+        sheet: "/UglyAura.png",
+        frames: Array.from({ length: 25 }, (_, i) => ({
+          x: 0,
+          y: i * 64,
+        })),
+      },
+    },
+  },
 ];

@@ -24,6 +24,9 @@ type Projectile = {
   speed: number;
   damage: number;
   isOrbital?: boolean;
+  isAura?: boolean;
+  tickInterval?: number;
+  lastHitTimestamp?: number;
 };
 
 export function startGameLoop({
@@ -61,6 +64,7 @@ export function startGameLoop({
 }) {
   let animationFrameId: number;
   let deathHandled = false;
+
   const projectilesRef = { current: [] as Projectile[] };
   let frameIndex = 0;
   const shieldHitTimestamps = new Map<number, number>();
@@ -72,7 +76,7 @@ export function startGameLoop({
     const charId = account?.selectedCharacterId;
     const character = account?.characters.find((c) => c.id === charId) || null;
 
-    // If we're paused or missing data, just schedule next frame
+    // Pause or missing data
     const isPaused = useGameSessionStore.getState().levelUpReady;
     if (
       isPaused ||
@@ -84,7 +88,7 @@ export function startGameLoop({
       return;
     }
 
-    // 1) Update player / world if still alive
+    // 1) Update world
     isHurtRef.current = isHurt;
     if (!isDead) {
       updatePlayer(
@@ -107,7 +111,7 @@ export function startGameLoop({
         isDead
       );
 
-      // 2) Orbital projectiles follow the player
+      // 2) Orbital follow
       projectilesRef.current.forEach((p) => {
         if (p.isOrbital) {
           p.traveled += 0.016 * 1000 * p.speed;
@@ -116,7 +120,7 @@ export function startGameLoop({
         }
       });
 
-      // 3) Spawn new projectiles
+      // 3) Spawn new projectiles (including aura as isAura)
       handleWeaponFire({
         now,
         lastShootTimesRef,
@@ -124,13 +128,13 @@ export function startGameLoop({
         player: playerRef.current,
       });
 
-      // 4) Handle shield hits
+      // 4) Shield hits
       projectilesRef.current.forEach((p) => {
         if (!p.isOrbital) return;
         const ts = performance.now();
         for (let i = enemyInstancesRef.current.length - 1; i >= 0; i--) {
           const e = enemyInstancesRef.current[i];
-          const half = 16; // orbital hit-size
+          const half = 16;
           if (Math.abs(p.x - e.x) < half && Math.abs(p.y - e.y) < half) {
             const last = shieldHitTimestamps.get(e.id) || 0;
             if (ts - last > 500) {
@@ -156,7 +160,7 @@ export function startGameLoop({
         }
       });
 
-      // 5) Player → enemy projectile hits
+      // 5) Projectile hits
       projectilesRef.current = projectilesRef.current.filter((proj) => {
         if (proj.isOrbital) return true;
         let didHit = false;
@@ -164,7 +168,7 @@ export function startGameLoop({
           const inst = enemyInstancesRef.current[i];
           const data = enemies.find((e) => e.id === inst.enemyId)!;
           const enemyBox = getEnemyHitbox(inst, data);
-          const size = 16; // your projectile size
+          const size = 16;
           const projBox = {
             x: proj.x - size / 2,
             y: proj.y - size / 2,
@@ -196,7 +200,55 @@ export function startGameLoop({
       });
     }
 
-    // 6) Render everything and get death‐anim status
+    // 5a) Aura hits and damage (fixed)
+    projectilesRef.current.forEach((p) => {
+      if (!p.isAura) return;
+
+      // keep aura centered on the player
+      p.x = playerRef.current.x;
+      p.y = playerRef.current.y;
+
+      const nowTs = performance.now();
+      // safely grab or default the stored values
+      const lastHit = p.lastHitTimestamp ?? 0;
+      const tick = p.tickInterval ?? 0;
+
+      for (let i = enemyInstancesRef.current.length - 1; i >= 0; i--) {
+        const e = enemyInstancesRef.current[i];
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+
+        // AOE circle check
+        if (dx * dx + dy * dy <= p.maxDistance * p.maxDistance) {
+          if (nowTs - lastHit >= tick) {
+            // update the last‐hit time on the projectile
+            p.lastHitTimestamp = nowTs;
+            // apply damage
+            e.hp -= p.damage;
+
+            // handle death, XP, and leveling
+            if (e.hp <= 0) {
+              enemyInstancesRef.current.splice(i, 1);
+              const xp =
+                enemies.find((ev) => ev.id === e.enemyId)?.xpReward ?? 0;
+              character.xp += xp;
+              let reqXp = getRequiredXp(character.level);
+              while (character.xp >= reqXp) {
+                character.xp -= reqXp;
+                character.level++;
+                character.maxHp += 10;
+                character.hp = character.maxHp;
+                character.attackSpeed += 0.1;
+                useGameSessionStore.getState().setLevelUpReady(true);
+                reqXp = getRequiredXp(character.level);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 6) Render & death check
     const deathDone = await renderFrame({
       frameIndex,
       ctx,
@@ -216,7 +268,6 @@ export function startGameLoop({
       setShowDeathScreen,
     });
 
-    // 7) If we’re dead and the death animation has finished, show death screen & stop
     if (isDead && deathDone && !deathHandled) {
       deathHandled = true;
       setShowDeathScreen(true);
@@ -224,7 +275,6 @@ export function startGameLoop({
       return;
     }
 
-    // 8) Loop
     animationFrameId = requestAnimationFrame(loop);
   };
 
