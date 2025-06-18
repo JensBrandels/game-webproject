@@ -22,6 +22,7 @@ type Projectile = {
   damage: number;
   isOrbital?: boolean;
   isAura?: boolean;
+  isMelee?: boolean;
 };
 
 type EnemyInstance = {
@@ -112,7 +113,7 @@ export async function renderFrame({
 
   // 5) Move & draw projectiles
   projectilesRef.current = projectilesRef.current.filter((p) => {
-    if (p.isOrbital || p.isAura) return true;
+    if (p.isOrbital || p.isAura || p.isMelee) return true;
 
     // move
     p.x += p.dx * p.speed;
@@ -188,6 +189,63 @@ export async function renderFrame({
     frameIndex,
     cameraOffset: camera,
     spriteSheets,
+  });
+
+  projectilesRef.current.forEach((p) => {
+    if (!p.isMelee) return;
+
+    const weapon = useAccountStore
+      .getState()
+      .account?.weapons.find((w) => w.type === "melee");
+
+    if (!weapon) return;
+
+    const slashLength = weapon.range;
+    const slashThickness = 4;
+    const sweepProgress = (performance.now() - p.id) / 150; // 0 to 1
+
+    const direction: "up" | "down" | "left" | "right" =
+      playerRef.current.direction ?? "down";
+
+    const baseAngle = {
+      up: -Math.PI / 2,
+      right: 0,
+      down: Math.PI / 2,
+      left: Math.PI,
+    }[direction];
+
+    const coneAngle = Math.PI / 3;
+    const sweepAngle = baseAngle - coneAngle / 2 + sweepProgress * coneAngle;
+
+    // Directional visual offset
+    let offsetX = 0;
+    let offsetY = 0;
+    switch (direction) {
+      case "left":
+        offsetX = -8;
+        break;
+      case "right":
+        offsetX = 8;
+        break;
+      case "up":
+        offsetY = -4;
+        break;
+      case "down":
+        offsetY = 4;
+        break;
+    }
+
+    const x1 = playerRef.current.x - camera.x + offsetX;
+    const y1 = playerRef.current.y - camera.y + offsetY;
+    const x2 = x1 + Math.cos(sweepAngle) * slashLength;
+    const y2 = y1 + Math.sin(sweepAngle) * slashLength;
+
+    ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+    ctx.lineWidth = slashThickness * 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
   });
 
   drawAura({

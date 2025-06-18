@@ -25,6 +25,7 @@ type Projectile = {
   damage: number;
   isOrbital?: boolean;
   isAura?: boolean;
+  isMelee?: boolean;
   tickInterval?: number;
   lastHitTimestamp?: number;
 };
@@ -162,6 +163,61 @@ export function startGameLoop({
 
       // 5) Projectile hits
       projectilesRef.current = projectilesRef.current.filter((proj) => {
+        if (proj.isMelee) {
+          const weapon = useAccountStore
+            .getState()
+            .account?.weapons.find((w) => w.type === "melee");
+          if (!weapon) return false;
+
+          const origin = { x: playerRef.current.x, y: playerRef.current.y };
+          const direction: "up" | "down" | "left" | "right" =
+            playerRef.current.direction ?? "down";
+          const angle = {
+            up: -Math.PI / 2,
+            right: 0,
+            down: Math.PI / 2,
+            left: Math.PI,
+          }[direction];
+          const range = weapon.range;
+          const coneAngle = Math.PI / 3;
+
+          for (let i = enemyInstancesRef.current.length - 1; i >= 0; i--) {
+            const enemy = enemyInstancesRef.current[i];
+            const dx = enemy.x - origin.x;
+            const dy = enemy.y - origin.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angleToEnemy = Math.atan2(dy, dx);
+            function angleDiff(a: number, b: number) {
+              let diff = a - b;
+              while (diff < -Math.PI) diff += Math.PI * 2;
+              while (diff > Math.PI) diff -= Math.PI * 2;
+              return Math.abs(diff);
+            }
+            const diff = angleDiff(angleToEnemy, angle);
+
+            if (distance <= range && diff <= coneAngle / 2) {
+              enemy.hp -= proj.damage;
+              if (enemy.hp <= 0) {
+                enemyInstancesRef.current.splice(i, 1);
+                const xp =
+                  enemies.find((ev) => ev.id === enemy.enemyId)?.xpReward ?? 0;
+                character.xp += xp;
+                const reqXp = getRequiredXp(character.level);
+                if (character.xp >= reqXp) {
+                  character.level++;
+                  character.xp -= reqXp;
+                  character.maxHp += 10;
+                  character.hp = character.maxHp;
+                  character.attackSpeed += 0.1;
+                  useGameSessionStore.getState().setLevelUpReady(true);
+                }
+              }
+            }
+          }
+
+          return now - proj.id < 150; //keep slash for 150ms
+        }
+
         if (proj.isOrbital) return true;
         let didHit = false;
         for (let i = enemyInstancesRef.current.length - 1; i >= 0; i--) {

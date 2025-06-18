@@ -56,6 +56,24 @@ export function LevelUpScreen() {
         }
         break;
       }
+      case "Add Iron Slash": {
+        const exists = useAccountStore
+          .getState()
+          .account?.weapons.some((w) => w.name === "Iron Slash");
+        if (!exists) {
+          const slash = weapons.find((w) => w.name === "Iron Slash");
+          if (slash) {
+            useAccountStore.setState((s) => ({
+              account: {
+                ...s.account!,
+                weapons: [...s.account!.weapons, { ...slash }],
+              },
+            }));
+            console.log("🗡️ Iron Slash added");
+          }
+        }
+        break;
+      }
     }
 
     setLevelUpReady(false);
@@ -66,6 +84,7 @@ export function LevelUpScreen() {
     "+20% Range",
     "Add Viking Shield",
     "Add Holy Aura",
+    "Add Iron Slash",
   ];
 
   return (

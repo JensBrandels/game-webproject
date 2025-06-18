@@ -13,6 +13,7 @@ type Projectile = {
   damage: number;
   isOrbital?: boolean;
   isAura?: boolean;
+  isMelee?: boolean;
   tickInterval?: number;
   lastHitTimestamp?: number;
 };
@@ -84,6 +85,22 @@ export function handleWeaponFire({
             isOrbital: true,
           });
         }
+        break;
+      }
+      case "melee": {
+        projectilesRef.current.push({
+          id: now + Math.random(),
+          x: player.x,
+          y: player.y,
+          dx: 0,
+          dy: 0,
+          direction: "up", // optional, not used for now
+          traveled: 0,
+          maxDistance: weapon.range,
+          speed: 0,
+          damage: weapon.damage,
+          isMelee: true,
+        });
         break;
       }
       case "aura":

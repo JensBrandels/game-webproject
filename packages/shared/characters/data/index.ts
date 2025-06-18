@@ -56,7 +56,7 @@ export const characters: Character[] = [
     mp: 0,
     movementSpeed: 2,
     attackSpeed: 1.2,
-    weapons: [weapons.find((w) => w.id === 1)!],
+    weapons: [weapons.find((w) => w.id === 4)!],
     xp: 0,
     level: 1,
     animations: {

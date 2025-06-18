@@ -112,4 +112,23 @@ export const weapons: Weapon[] = [
       },
     },
   },
+  {
+    id: 4,
+    name: "Iron Slash",
+    type: "melee",
+    damage: 30,
+    speed: 0,
+    cooldown: 0.6,
+    size: 64,
+    range: 64,
+    animations: {
+      slash: {
+        sheet: "/MeleeSlash.png",
+        frames: Array.from({ length: 6 }, (_, i) => ({
+          x: 0,
+          y: i * 64,
+        })),
+      },
+    },
+  },
 ];
